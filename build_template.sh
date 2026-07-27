@@ -22,7 +22,4 @@ for part in template_parts/*.rb; do
   fi
 done
 
-# Keep root template.rb synchronized for convenience
-cp "$OUT_FILE" template.rb
-
-echo "==> Template successfully compiled to $OUT_FILE and copied to template.rb"
+echo "==> Template successfully compiled to $OUT_FILE"

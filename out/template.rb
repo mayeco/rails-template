@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 13:44:45 -04 2026
+# Built at: Mon Jul 27 13:47:08 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
