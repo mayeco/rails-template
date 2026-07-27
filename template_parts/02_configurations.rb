@@ -28,7 +28,16 @@ def add_configurations
     heroku_api_token: "dummy_heroku_api_token"
   YAML
 
+  create_file "config/initializers/simple_form.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    SimpleForm.setup do |config|
+    end
+  RUBY
+
   create_file "config/initializers/recaptcha.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
     Recaptcha.configure do |config|
       config.site_key = Figaro.env.recaptcha_site_key
       config.secret_key = Figaro.env.recaptcha_secret_key
@@ -36,6 +45,8 @@ def add_configurations
   RUBY
 
   create_file "config/initializers/redis.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
     require "redis"
 
     redis_config = {
@@ -54,29 +65,28 @@ def add_configurations
     PrefixedIds.minimum_length = 10
   RUBY
 
-  create_file "config/initializers/flash_rails_messages_bootstrap.rb", <<~'RUBY', force: true
+  create_file "config/initializers/flash_rails_messages.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
     module FlashRailsMessages
       class Base
-        def close_element
-          content_tag :button, type: "button", class: "close", "data-dismiss": "alert" do
-            content_tag(:span, "&times;".html_safe, "aria-hidden": "true") +
-              content_tag(:span, "Close", class: "sr-only")
+        def alert_element(type, message)
+          content_tag :div, class: alert_classes(type), role: "alert" do
+            message.html_safe
           end
+        end
+
+        def alert_classes(type)
+          "p-4 mb-4 text-sm rounded-xl font-medium shadow-sm flex items-center justify-between #{alert_type_classes[type] || 'bg-slate-100 text-slate-800 border border-slate-200'}"
         end
 
         def alert_type_classes
           {
-            success: "alert-success",
-            notice: "alert-success",
-            alert: "alert-danger",
-            error: "alert-danger"
+            success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
+            notice:  "bg-blue-50 text-blue-800 border border-blue-200",
+            alert:   "bg-amber-50 text-amber-800 border border-amber-200",
+            error:   "bg-red-50 text-red-800 border border-red-200"
           }
-        end
-
-        def custom_alert_classes
-          if options.fetch(:dismissible, false)
-            "alert-dismissible"
-          end
         end
       end
     end

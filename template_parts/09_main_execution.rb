@@ -12,9 +12,10 @@ add_routes
 add_automation_scripts
 
 after_bundle do
-  puts "\n==> Running default generators: Devise, Simple Form, Active Storage, Solid Stack, and Pundit..."
+  puts "\n==> Running default generators: Tailwind CSS, Simple Form Tailwind, Devise, Active Storage, Solid Stack..."
+  rails_command "tailwindcss:install"
+  generate "simple_form:tailwind:install"
   generate "devise:install"
-  generate "simple_form:install --bootstrap"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"
   rails_command "solid_cache:install"

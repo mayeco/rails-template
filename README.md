@@ -9,7 +9,7 @@ A modular, production-ready Rails application template generator designed to qui
 - **Solid Stack & Queues**: **Solid Queue**, **Solid Cache**, and **Solid Cable** integration, complete with **Mission Control Jobs** dashboard at `/jobs`.
 - **Performance & Caching**: **Redis** / **Hiredis** initializer, **HtmlCompressor** middleware for response minification, and N+1 query detection via **Bullet**.
 - **Monitoring & Debugging**: **Debugbar** and **Letter Opener Web** for development email previews at `/letter_opener`.
-- **UI & Helpers**: Integrated **SimpleForm**, **ViewComponent**, **Pagy** pagination, **Bootstrap 5.3**, **Bootstrap Icons**, and flash message components.
+- **UI & Helpers**: Integrated **Tailwind CSS** (`tailwindcss-rails`), **SimpleForm Tailwind** (`simple_form-tailwind`), **ViewComponent**, **Pagy** pagination, **Bootstrap Icons**, and flash message components.
 - **Security & Identifiers**: **PrefixedIds** for human-readable and obfuscated model identifiers.
 - **Automation & Heroku Tooling**:
   - `script/setup_heroku_env.sh`: Shell script to automatically push local environment variables from `config/application.yml` to Heroku.
