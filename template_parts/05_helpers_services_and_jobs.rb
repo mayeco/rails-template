@@ -28,8 +28,8 @@ def add_helpers_services_and_jobs
       attr_reader :app_name, :api_token
 
       def initialize(app_name = nil, api_token = nil)
-        @app_name = app_name || Figaro.env.HEROKU_APP_NAME!
-        @api_token = api_token || Figaro.env.HEROKU_API_TOKEN!
+        @app_name = app_name || Figaro.env.heroku_app_name
+        @api_token = api_token || Figaro.env.heroku_api_token
       end
 
       def enable_maintenance_mode

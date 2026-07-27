@@ -8,8 +8,8 @@ A modular, production-ready Rails application template generator designed to qui
 - **Authentication & OAuth**: Pre-configured **Devise** with multi-provider **OmniAuth** support (Google OAuth2, Facebook, Microsoft Graph) and **reCAPTCHA v3** protection.
 - **Solid Stack & Queues**: **Solid Queue**, **Solid Cache**, and **Solid Cable** integration, complete with **Mission Control Jobs** dashboard at `/jobs`.
 - **Performance & Caching**: **Redis** / **Hiredis** initializer, **HtmlCompressor** middleware for response minification, and N+1 query detection via **Bullet**.
-- **Monitoring & Debugging**: **Sentry** error reporting integration, **Debugbar**, and **Letter Opener Web** for development email previews at `/letter_opener`.
-- **UI & Helpers**: Integrated **SimpleForm**, **ViewComponent**, **Pagy** pagination, **Webpixels CSS** (Elegant theme), **Bootstrap 5**, and flash message components.
+- **Monitoring & Debugging**: **Debugbar** and **Letter Opener Web** for development email previews at `/letter_opener`.
+- **UI & Helpers**: Integrated **SimpleForm**, **ViewComponent**, **Pagy** pagination, **Bootstrap 5.3**, **Bootstrap Icons**, and flash message components.
 - **Security & Identifiers**: **PrefixedIds** for human-readable and obfuscated model identifiers.
 - **Automation & Heroku Tooling**:
   - `script/setup_heroku_env.sh`: Shell script to automatically push local environment variables from `config/application.yml` to Heroku.
@@ -20,8 +20,8 @@ A modular, production-ready Rails application template generator designed to qui
 
 ```text
 .
-├── build_template.sh              # Script to assemble template_parts/*.rb into template.rb
-├── template.rb                    # Compiled Rails application template (generated file)
+├── build_template.sh              # Script to assemble template_parts/*.rb into out/template.rb
+├── generate_test.sh               # Script to generate a test Rails app in tmp/ and verify execution
 ├── template_parts/
 │   ├── 01_gems.rb                 # Core, UI, utility, and development gems
 │   ├── 02_configurations.rb       # Environment settings and initializers
@@ -33,7 +33,7 @@ A modular, production-ready Rails application template generator designed to qui
 │   ├── 08_automation_scripts.rb   # Infrastructure and Heroku setup scripts
 │   └── 09_main_execution.rb      # Template execution flow and post-bundle setup
 └── out/
-    └── template.rb                # Build output directory
+    └── template.rb                # Compiled Rails application template (generated file)
 ```
 
 ---
@@ -45,18 +45,18 @@ A modular, production-ready Rails application template generator designed to qui
 To create a new Rails application using this template:
 
 ```bash
-rails new my_app -m /path/to/template.rb
+rails new my_app -m /path/to/out/template.rb
 ```
 
 Alternatively, apply the template to an existing application:
 
 ```bash
-bin/rails app:template LOCATION=/path/to/template.rb
+bin/rails app:template LOCATION=/path/to/out/template.rb
 ```
 
 ### 2. Modifying and Rebuilding the Template
 
-Do **not** edit `template.rb` directly, as it is generated from the source files inside `template_parts/`.
+Do **not** edit `out/template.rb` directly, as it is generated from the source files inside `template_parts/`.
 
 1. Edit the relevant file(s) in `template_parts/`.
 2. Rebuild the main template by running:
@@ -65,7 +65,17 @@ Do **not** edit `template.rb` directly, as it is generated from the source files
 ./build_template.sh
 ```
 
-This updates both `out/template.rb` and `template.rb` at the root of the project.
+This compiles the template to `out/template.rb`.
+
+### 3. Testing the Template
+
+To generate a test Rails application using the current template and verify that key files and environment loads properly:
+
+```bash
+./generate_test.sh
+```
+
+The test application will be created and preserved inside the `./tmp/` directory (which is ignored by Git).
 
 ---
 

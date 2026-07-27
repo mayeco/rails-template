@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 13:47:08 -04 2026
+# Built at: Mon Jul 27 14:53:06 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -70,10 +70,25 @@ def add_configurations
   environment "config.active_storage.service = :amazon", env: "production"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
 
+  create_file "config/application.yml", <<~'YAML', force: true
+    recaptcha_site_key: "dummy_site_key"
+    recaptcha_secret_key: "dummy_secret_key"
+    redis_url: "redis://localhost:6379/0"
+    prefixed_ids_salt: "default_salt_key_123"
+    google_client_id: "dummy_google_id"
+    google_client_secret: "dummy_google_secret"
+    facebook_app_id: "dummy_facebook_id"
+    facebook_app_secret: "dummy_facebook_secret"
+    azure_client_id: "dummy_azure_id"
+    azure_client_secret: "dummy_azure_secret"
+    heroku_app_name: "dummy_heroku_app_name"
+    heroku_api_token: "dummy_heroku_api_token"
+  YAML
+
   create_file "config/initializers/recaptcha.rb", <<~'RUBY', force: true
     Recaptcha.configure do |config|
-      config.site_key = ENV["RECAPTCHA_SITE_KEY"].presence || (defined?(Figaro) && Figaro.env.recaptcha_site_key rescue nil) || "dummy_site_key"
-      config.secret_key = ENV["RECAPTCHA_SECRET_KEY"].presence || (defined?(Figaro) && Figaro.env.recaptcha_secret_key rescue nil) || "dummy_secret_key"
+      config.site_key = Figaro.env.recaptcha_site_key
+      config.secret_key = Figaro.env.recaptcha_secret_key
     end
   RUBY
 
@@ -81,7 +96,7 @@ def add_configurations
     require "redis"
 
     redis_config = {
-      url: ENV["REDIS_URL"] || (defined?(Figaro) && Figaro.env.redis_url rescue nil) || "redis://localhost:6379/0",
+      url: Figaro.env.redis_url,
       ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE },
       connect_timeout: 5,
       reconnect_attempts: 3,
@@ -92,7 +107,7 @@ def add_configurations
   RUBY
 
   create_file "config/initializers/prefixed_ids.rb", <<~'RUBY', force: true
-    PrefixedIds.salt = ENV["PREFIXED_IDS_SALT"].presence || (defined?(Figaro) && Figaro.env.prefixed_ids_salt rescue nil) || "default_salt_key_123"
+    PrefixedIds.salt = Figaro.env.prefixed_ids_salt
     PrefixedIds.minimum_length = 10
   RUBY
 
@@ -122,10 +137,6 @@ def add_configurations
         end
       end
     end
-  RUBY
-
-  create_file "config/initializers/inflections.rb", <<~'RUBY', force: true
-    # Be sure to restart your server when you modify this file.
   RUBY
 end
 
@@ -374,8 +385,8 @@ def add_helpers_services_and_jobs
       attr_reader :app_name, :api_token
 
       def initialize(app_name = nil, api_token = nil)
-        @app_name = app_name || Figaro.env.HEROKU_APP_NAME!
-        @api_token = api_token || Figaro.env.HEROKU_API_TOKEN!
+        @app_name = app_name || Figaro.env.heroku_app_name
+        @api_token = api_token || Figaro.env.heroku_api_token
       end
 
       def enable_maintenance_mode
@@ -475,7 +486,7 @@ def add_views
     <!DOCTYPE html>
     <html lang="es" data-bs-theme="light">
     <head>
-      <title><%= content_for(:title) || "Agentpl" %></title>
+      <title><%= content_for(:title) || Rails.application.class.module_parent_name.titleize %></title>
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <meta name="apple-mobile-web-app-capable" content="yes">
       <meta name="mobile-web-app-capable" content="yes">
@@ -488,277 +499,402 @@ def add_views
       <link rel="icon" href="/icon.svg" type="image/svg+xml">
       <link rel="apple-touch-icon" href="/icon.png">
 
-      <link rel="stylesheet" href="https://unpkg.com/@webpixels/css/dist/index.css">
-      <link rel="stylesheet" href="https://unpkg.com/@webpixels/css/dist/themes/elegant.css">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
       <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
 
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-      <%= javascript_importmap_tags %>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
       <%= debugbar_head if defined? Debugbar %>
-      <%= Sentry.get_trace_propagation_meta.html_safe if defined?(Sentry) %>
     </head>
 
-    <body class="theme-elegant">
-    <div class="container">
-      <%= render_flash_messages if respond_to?(:render_flash_messages) %>
-      <%= yield %>
+    <body class="bg-body-tertiary min-vh-100 d-flex flex-column">
+      <main class="container my-auto py-5">
+        <%= render_flash_messages if respond_to?(:render_flash_messages) %>
+        <%= yield %>
 
-      <% if user_signed_in? %>
-        <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "btn btn-sm d-inline-flex btn-neutral text-danger" do %>
-          <span class="pe-2"><i class="bi bi-trash"></i></span> Log out
+        <% if user_signed_in? %>
+          <div class="text-center mt-4">
+            <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-2" do %>
+              <i class="bi bi-box-arrow-right"></i> Log out
+            <% end %>
+          </div>
         <% end %>
-      <% end %>
-    </div>
-    <%= debugbar_body if defined? Debugbar %>
+      </main>
+      <%= debugbar_body if defined? Debugbar %>
     </body>
     </html>
   ERB
 
   create_file "app/views/page/index.html.erb", <<~'ERB', force: true
-    <h1>Page#index</h1>
-    <p>Find me in app/views/page/index.html.erb</p>
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8 text-center py-5">
+        <h1 class="display-5 fw-bold mb-3"><%= Rails.application.class.module_parent_name.titleize %></h1>
+        <p class="lead text-secondary mb-4">Welcome back, <strong><%= current_user.email %></strong>!</p>
+        <div class="card shadow-sm border-0 rounded-3 p-4">
+          <p class="mb-0 text-muted">Find this view in <code>app/views/page/index.html.erb</code></p>
+        </div>
+      </div>
+    </div>
   ERB
 
   # Devise Views
   create_file "app/views/devise/sessions/new.html.erb", <<~'ERB', force: true
-    <h2>Log in</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Welcome back</h2>
+              <p class="text-secondary small">Please log in to your account</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
-      <%= recaptcha_v3(action: "LOGIN") if respond_to?(:recaptcha_v3) %>
+            <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
+              <%= recaptcha_v3(action: "LOGIN") if respond_to?(:recaptcha_v3) %>
 
-      <div class="form-inputs">
-        <%= f.input :email,
-                    required: false,
-                    autofocus: true,
-                    input_html: { autocomplete: "email" } %>
-        <%= f.input :password,
-                    required: false,
-                    input_html: { autocomplete: "current-password" } %>
-        <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
+              <div class="mb-3">
+                <%= f.input :email,
+                            required: false,
+                            autofocus: true,
+                            input_html: { autocomplete: "email", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :password,
+                            required: false,
+                            input_html: { autocomplete: "current-password", class: "form-control" } %>
+              </div>
+
+              <% if devise_mapping.rememberable? %>
+                <div class="mb-3 form-check">
+                  <%= f.input :remember_me, as: :boolean, wrapper_html: { class: "mb-0" } %>
+                </div>
+              <% end %>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Log in", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Log in" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/registrations/new.html.erb", <<~'ERB', force: true
-    <h2>Sign up</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Create an account</h2>
+              <p class="text-secondary small">Sign up to get started</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
-      <%= recaptcha_v3(action: "REGISTRATION") if respond_to?(:recaptcha_v3) %>
+            <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
+              <%= recaptcha_v3(action: "REGISTRATION") if respond_to?(:recaptcha_v3) %>
 
-      <div class="form-inputs">
-        <%= f.input :email,
-                    required: true,
-                    autofocus: true,
-                    input_html: { autocomplete: "email" }%>
-        <%= f.input :password,
-                    required: true,
-                    hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
-                    input_html: { autocomplete: "new-password" } %>
-        <%= f.input :password_confirmation,
-                    required: true,
-                    input_html: { autocomplete: "new-password" } %>
+              <div class="mb-3">
+                <%= f.input :email,
+                            required: true,
+                            autofocus: true,
+                            input_html: { autocomplete: "email", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :password,
+                            required: true,
+                            hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :password_confirmation,
+                            required: true,
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Sign up", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Sign up" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/registrations/edit.html.erb", <<~'ERB', force: true
-    <h2>Edit <%= resource_name.to_s.humanize %></h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="mb-4">
+              <h2 class="fw-bold h3 mb-1">Edit Account</h2>
+              <p class="text-secondary small">Update your profile settings and password</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-      <%= f.error_notification %>
+            <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+              <%= f.error_notification %>
 
-      <div class="form-inputs">
-        <%= f.input :email, required: true, autofocus: true %>
+              <div class="mb-3">
+                <%= f.input :email, required: true, autofocus: true, input_html: { class: "form-control" } %>
 
-        <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-          <p>Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
-        <% end %>
+                <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+                  <div class="alert alert-info py-2 mt-2 mb-0 small">
+                    Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong>
+                  </div>
+                <% end %>
+              </div>
 
-        <%= f.input :password,
-                    hint: "leave it blank if you don't want to change it",
-                    required: false,
-                    input_html: { autocomplete: "new-password" } %>
-        <%= f.input :password_confirmation,
-                    required: false,
-                    input_html: { autocomplete: "new-password" } %>
-        <%= f.input :current_password,
-                    hint: "we need your current password to confirm your changes",
-                    required: true,
-                    input_html: { autocomplete: "current-password" } %>
+              <div class="mb-3">
+                <%= f.input :password,
+                            hint: "leave it blank if you don't want to change it",
+                            required: false,
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :password_confirmation,
+                            required: false,
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :current_password,
+                            hint: "we need your current password to confirm your changes",
+                            required: true,
+                            input_html: { autocomplete: "current-password", class: "form-control" } %>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <%= link_to "Back", :back, class: "btn btn-outline-secondary" %>
+                <%= f.button :submit, "Update Profile", class: "btn btn-primary" %>
+              </div>
+            <% end %>
+
+            <hr class="my-4">
+
+            <div class="card bg-danger-subtle border-danger-subtle">
+              <div class="card-body p-3 text-danger-emphasis d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="fw-bold mb-0">Cancel my account</h6>
+                  <small>Permanently delete your account and all associated data.</small>
+                </div>
+                <%= button_to "Delete Account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "btn btn-sm btn-danger" %>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Update" %>
-      </div>
-    <% end %>
-
-    <h3>Cancel my account</h3>
-
-    <div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
-
-    <%= link_to "Back", :back %>
+    </div>
   ERB
 
   create_file "app/views/devise/passwords/new.html.erb", <<~'ERB', force: true
-    <h2>Forgot your password?</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Forgot password?</h2>
+              <p class="text-secondary small">Enter your email address to reset your password</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
-      <%= f.error_notification %>
+            <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
+              <%= f.error_notification %>
 
-      <div class="form-inputs">
-        <%= f.input :email,
-                    required: true,
-                    autofocus: true,
-                    input_html: { autocomplete: "email" } %>
+              <div class="mb-3">
+                <%= f.input :email,
+                            required: true,
+                            autofocus: true,
+                            input_html: { autocomplete: "email", class: "form-control" } %>
+              </div>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Send reset instructions", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Send me reset password instructions" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/passwords/edit.html.erb", <<~'ERB', force: true
-    <h2>Change your password</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Change password</h2>
+              <p class="text-secondary small">Set a new password for your account</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-      <%= f.error_notification %>
+            <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
+              <%= f.error_notification %>
 
-      <%= f.input :reset_password_token, as: :hidden %>
-      <%= f.full_error :reset_password_token %>
+              <%= f.input :reset_password_token, as: :hidden %>
+              <%= f.full_error :reset_password_token %>
 
-      <div class="form-inputs">
-        <%= f.input :password,
-                    label: "New password",
-                    required: true,
-                    autofocus: true,
-                    hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
-                    input_html: { autocomplete: "new-password" } %>
-        <%= f.input :password_confirmation,
-                    label: "Confirm your new password",
-                    required: true,
-                    input_html: { autocomplete: "new-password" } %>
+              <div class="mb-3">
+                <%= f.input :password,
+                            label: "New password",
+                            required: true,
+                            autofocus: true,
+                            hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.input :password_confirmation,
+                            label: "Confirm new password",
+                            required: true,
+                            input_html: { autocomplete: "new-password", class: "form-control" } %>
+              </div>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Change my password", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Change my password" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/confirmations/new.html.erb", <<~'ERB', force: true
-    <h2>Resend confirmation instructions</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Resend confirmation</h2>
+              <p class="text-secondary small">Request a new account confirmation email</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-      <%= f.error_notification %>
-      <%= f.full_error :confirmation_token %>
+            <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+              <%= f.error_notification %>
+              <%= f.full_error :confirmation_token %>
 
-      <div class="form-inputs">
-        <%= f.input :email,
-                    required: true,
-                    autofocus: true,
-                    value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
-                    input_html: { autocomplete: "email" } %>
+              <div class="mb-3">
+                <%= f.input :email,
+                            required: true,
+                            autofocus: true,
+                            value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
+                            input_html: { autocomplete: "email", class: "form-control" } %>
+              </div>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Resend instructions", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Resend confirmation instructions" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/unlocks/new.html.erb", <<~'ERB', force: true
-    <h2>Resend unlock instructions</h2>
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold h3 mb-1">Resend unlock</h2>
+              <p class="text-secondary small">Request instructions to unlock your account</p>
+            </div>
 
-    <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
-      <%= f.error_notification %>
-      <%= f.full_error :unlock_token %>
+            <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
+              <%= f.error_notification %>
+              <%= f.full_error :unlock_token %>
 
-      <div class="form-inputs">
-        <%= f.input :email,
-                    required: true,
-                    autofocus: true,
-                    input_html: { autocomplete: "email" } %>
+              <div class="mb-3">
+                <%= f.input :email,
+                            required: true,
+                            autofocus: true,
+                            input_html: { autocomplete: "email", class: "form-control" } %>
+              </div>
+
+              <div class="d-grid mt-4">
+                <%= f.button :submit, "Resend unlock instructions", class: "btn btn-primary btn-lg" %>
+              </div>
+            <% end %>
+
+            <%= render "devise/shared/links" %>
+          </div>
+        </div>
       </div>
-
-      <div class="form-actions">
-        <%= f.button :submit, "Resend unlock instructions" %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
+    </div>
   ERB
 
   create_file "app/views/devise/shared/_links.html.erb", <<~'ERB', force: true
-    <%- if controller_name != 'sessions' %>
-      <%= link_to "Log in", new_session_path(resource_name), data: { turbo: false } %><br/>
-    <% end %>
+    <div class="mt-4 pt-3 border-top text-center text-secondary small">
+      <%- if controller_name != 'sessions' %>
+        <div class="mb-1">Already have an account? <%= link_to "Log in", new_session_path(resource_name), data: { turbo: false }, class: "text-decoration-none fw-semibold" %></div>
+      <% end %>
 
-    <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
-      <%= link_to "Sign up", new_registration_path(resource_name), data: { turbo: false } %><br/>
-    <% end %>
+      <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
+        <div class="mb-1">Don't have an account? <%= link_to "Sign up", new_registration_path(resource_name), data: { turbo: false }, class: "text-decoration-none fw-semibold" %></div>
+      <% end %>
 
-    <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-      <%= link_to "Forgot your password?", new_password_path(resource_name) %><br/>
-    <% end %>
+      <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
+        <div class="mb-1"><%= link_to "Forgot your password?", new_password_path(resource_name), class: "text-decoration-none" %></div>
+      <% end %>
 
-    <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
-      <%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name) %><br/>
-    <% end %>
+      <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
+        <div class="mb-1"><%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name), class: "text-decoration-none" %></div>
+      <% end %>
 
-    <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
-      <%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name) %><br/>
-    <% end %>
+      <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
+        <div class="mb-1"><%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name), class: "text-decoration-none" %></div>
+      <% end %>
+    </div>
 
     <%- if devise_mapping.omniauthable? %>
-      <div class="text-center mt-6 mb-3 text-muted small">
-        <%- if controller_name == 'sessions' %>
-          or log in with
-        <% else %>
-          or create your account with
-        <% end %>
-      </div>
+      <div class="text-center mt-4">
+        <div class="position-relative mb-3">
+          <hr class="text-secondary opacity-25">
+          <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 text-secondary small">
+            <%- if controller_name == 'sessions' %>
+              or log in with
+            <%- else %>
+              or create account with
+            <% end %>
+          </span>
+        </div>
 
-      <div class="text-center mb-6 d-flex gap-2 small">
-        <%- resource_class.omniauth_providers.each do |provider| %>
-          <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "btn btn-sm btn-neutral flex-grow-1", form_class: "d-flex flex-grow-1" do %>
-            <i class="bi bi-<%= omniauth_icon(provider) %>"></i>
+        <div class="d-flex gap-2">
+          <%- resource_class.omniauth_providers.each do |provider| %>
+            <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "btn btn-outline-secondary flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2", form_class: "flex-grow-1" do %>
+              <i class="bi bi-<%= omniauth_icon(provider) %> fs-5"></i>
+              <span class="text-capitalize small"><%= provider.to_s.split('_').first %></span>
+            <% end %>
           <% end %>
-        <% end %>
+        </div>
       </div>
     <% end %>
   ERB
 
   create_file "app/views/devise/shared/_error_messages.html.erb", <<~'ERB', force: true
     <% if resource.errors.any? %>
-      <div id="error_explanation" data-turbo-cache="false">
-        <h2>
+      <div id="error_explanation" class="alert alert-danger" data-turbo-cache="false">
+        <h5 class="alert-heading h6 fw-bold">
           <%= I18n.t("errors.messages.not_saved",
                      count: resource.errors.count,
                      resource: resource.class.model_name.human.downcase)
            %>
-        </h2>
-        <ul>
+        </h5>
+        <ul class="mb-0 ps-3 small">
           <% resource.errors.full_messages.each do |message| %>
             <li><%= message %></li>
           <% end %>
@@ -875,7 +1011,7 @@ add_automation_scripts
 after_bundle do
   puts "\n==> Running default generators: Devise, Simple Form, Active Storage, Solid Stack, and Pundit..."
   generate "devise:install"
-  generate "simple_form:install"
+  generate "simple_form:install --bootstrap"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"
   rails_command "solid_cache:install"
@@ -887,15 +1023,15 @@ after_bundle do
       config.responder.error_status = :unprocessable_entity
       config.responder.redirect_status = :see_other
 
-      config.omniauth :google_oauth2, ENV["GOOGLE_CLIENT_ID"].presence || (defined?(Figaro) && Figaro.env.google_client_id rescue nil) || "dummy_google_id", ENV["GOOGLE_CLIENT_SECRET"].presence || (defined?(Figaro) && Figaro.env.google_client_secret rescue nil) || "dummy_google_secret", {
+      config.omniauth :google_oauth2, Figaro.env.google_client_id, Figaro.env.google_client_secret, {
         scope: "email"
       }
 
-      config.omniauth :facebook, ENV["FACEBOOK_APP_ID"].presence || (defined?(Figaro) && Figaro.env.facebook_app_id rescue nil) || "dummy_facebook_id", ENV["FACEBOOK_APP_SECRET"].presence || (defined?(Figaro) && Figaro.env.facebook_app_secret rescue nil) || "dummy_facebook_secret", {
+      config.omniauth :facebook, Figaro.env.facebook_app_id, Figaro.env.facebook_app_secret, {
         scope: "email"
       }
 
-      config.omniauth :microsoft_graph, ENV["AZURE_CLIENT_ID"].presence || (defined?(Figaro) && Figaro.env.azure_client_id rescue nil) || "dummy_azure_id", ENV["AZURE_CLIENT_SECRET"].presence || (defined?(Figaro) && Figaro.env.azure_client_secret rescue nil) || "dummy_azure_secret", {
+      config.omniauth :microsoft_graph, Figaro.env.azure_client_id, Figaro.env.azure_client_secret, {
         scope: "openid email User.Read",
         skip_domain_verification: true
       }
@@ -922,59 +1058,22 @@ after_bundle do
       heroku_auto_maintenance:
         class: HerokuMaintenanceJob
         schedule: every day at midnight
+
+      clear_solid_queue_finished_jobs:
+        command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+        schedule: every hour at minute 12
+
   YAML
 
-  create_file "config/queue.yml", <<~'YAML', force: true
-    default: &default
-      dispatchers:
-        - polling_interval: 1
-          batch_size: 500
-      workers:
-        - queues: "*"
-          threads: 3
-          processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
-          polling_interval: 0.1
-
-    development:
-      <<: *default
-
-    test:
-      <<: *default
-
-    production:
-      <<: *default
-  YAML
-
-  create_file "config/cache.yml", <<~'YAML', force: true
-    default: &default
-      store_options:
-        max_size: <%= 256.megabytes %>
-        namespace: <%= Rails.env %>
-
-    development:
-      database: cache
-      <<: *default
-
-    test:
-      <<: *default
-
-    production:
-      database: cache
-      <<: *default
-  YAML
-
-  create_file "config/importmap.rb", <<~'RUBY', force: true
-    pin "application"
-    pin "@hotwired/turbo-rails", to: "turbo.min.js"
-    pin "@hotwired/stimulus", to: "stimulus.min.js"
-    pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
-    pin_all_from "app/javascript/controllers", under: "controllers"
-    pin "trix"
-    pin "@rails/actiontext", to: "actiontext.esm.js"
-  RUBY
+  append_to_file "config/importmap.rb" do
+    <<~RUBY
+      pin "trix"
+      pin "@rails/actiontext", to: "actiontext.esm.js"
+    RUBY
+  end
 
   rails_command "db:migrate"
-  rails_command "runner \"load 'db/queue_schema.rb'; load 'db/cache_schema.rb'; load 'db/cable_schema.rb'\" if File.exist?('db/queue_schema.rb')"
+  rails_command "runner \"if File.exist?('db/queue_schema.rb'); load 'db/queue_schema.rb'; load 'db/cache_schema.rb'; load 'db/cable_schema.rb'; end\""
 
   puts "\n========================================================="
   puts " RAILS-CORE TEMPLATE APPLIED SUCCESSFULLY!"

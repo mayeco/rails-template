@@ -13,10 +13,25 @@ def add_configurations
   environment "config.active_storage.service = :amazon", env: "production"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
 
+  create_file "config/application.yml", <<~'YAML', force: true
+    recaptcha_site_key: "dummy_site_key"
+    recaptcha_secret_key: "dummy_secret_key"
+    redis_url: "redis://localhost:6379/0"
+    prefixed_ids_salt: "default_salt_key_123"
+    google_client_id: "dummy_google_id"
+    google_client_secret: "dummy_google_secret"
+    facebook_app_id: "dummy_facebook_id"
+    facebook_app_secret: "dummy_facebook_secret"
+    azure_client_id: "dummy_azure_id"
+    azure_client_secret: "dummy_azure_secret"
+    heroku_app_name: "dummy_heroku_app_name"
+    heroku_api_token: "dummy_heroku_api_token"
+  YAML
+
   create_file "config/initializers/recaptcha.rb", <<~'RUBY', force: true
     Recaptcha.configure do |config|
-      config.site_key = ENV["RECAPTCHA_SITE_KEY"].presence || (defined?(Figaro) && Figaro.env.recaptcha_site_key rescue nil) || "dummy_site_key"
-      config.secret_key = ENV["RECAPTCHA_SECRET_KEY"].presence || (defined?(Figaro) && Figaro.env.recaptcha_secret_key rescue nil) || "dummy_secret_key"
+      config.site_key = Figaro.env.recaptcha_site_key
+      config.secret_key = Figaro.env.recaptcha_secret_key
     end
   RUBY
 
@@ -24,7 +39,7 @@ def add_configurations
     require "redis"
 
     redis_config = {
-      url: ENV["REDIS_URL"] || (defined?(Figaro) && Figaro.env.redis_url rescue nil) || "redis://localhost:6379/0",
+      url: Figaro.env.redis_url,
       ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE },
       connect_timeout: 5,
       reconnect_attempts: 3,
@@ -35,7 +50,7 @@ def add_configurations
   RUBY
 
   create_file "config/initializers/prefixed_ids.rb", <<~'RUBY', force: true
-    PrefixedIds.salt = ENV["PREFIXED_IDS_SALT"].presence || (defined?(Figaro) && Figaro.env.prefixed_ids_salt rescue nil) || "default_salt_key_123"
+    PrefixedIds.salt = Figaro.env.prefixed_ids_salt
     PrefixedIds.minimum_length = 10
   RUBY
 
@@ -65,9 +80,5 @@ def add_configurations
         end
       end
     end
-  RUBY
-
-  create_file "config/initializers/inflections.rb", <<~'RUBY', force: true
-    # Be sure to restart your server when you modify this file.
   RUBY
 end
