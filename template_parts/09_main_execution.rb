@@ -76,8 +76,17 @@ after_bundle do
     RUBY
   end
 
+  append_to_file "app/javascript/application.js" do
+    <<~JS
+      import "trix"
+      import "@rails/actiontext"
+    JS
+  end
+
   rails_command "db:migrate"
-  rails_command "runner \"if File.exist?('db/queue_schema.rb'); load 'db/queue_schema.rb'; load 'db/cache_schema.rb'; load 'db/cable_schema.rb'; end\""
+  rails_command "runner \"load 'db/queue_schema.rb' if File.exist?('db/queue_schema.rb')\""
+  rails_command "runner \"load 'db/cache_schema.rb' if File.exist?('db/cache_schema.rb')\""
+  rails_command "runner \"load 'db/cable_schema.rb' if File.exist?('db/cable_schema.rb')\""
 
   puts "\n========================================================="
   puts " RAILS-CORE TEMPLATE APPLIED SUCCESSFULLY!"

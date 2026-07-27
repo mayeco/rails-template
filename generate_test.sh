@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/out/template.rb"
 
 echo "==> Creating test Rails application in ${TEST_APP_DIR}..."
-rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" --skip-git
+rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" --skip-git --skip-kamal
 
 # 3. Verify Rails application execution
 echo "==> Verifying generated Rails application..."
@@ -34,6 +34,9 @@ REQUIRED_FILES=(
   "config/recurring.yml"
   "config/queue.yml"
   "config/cache.yml"
+  "Procfile"
+  "script/setup_heroku_env.sh"
+  ".ruby-gemset"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

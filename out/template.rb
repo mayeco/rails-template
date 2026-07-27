@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 16:18:29 -04 2026
+# Built at: Mon Jul 27 19:03:06 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -71,6 +71,8 @@ def add_configurations
 
   environment "config.active_storage.service = :amazon", env: "production"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
+
+  create_file ".ruby-gemset", "#{app_name}\n", force: true
 
   create_file "config/application.yml", <<~'YAML', force: true
     recaptcha_site_key: "dummy_site_key"
@@ -935,30 +937,57 @@ end
 
 # --- Part: 08_automation_scripts.rb ---
 def add_automation_scripts
-  puts "\n==> 8. Preserving Automation Scripts in script/..."
+  puts "\n==> 8. Preserving Automation Scripts & Procfile..."
+
+  create_file "Procfile", <<~'PROCFILE', force: true
+    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000} -e $RAILS_ENV
+    worker: ./bin/jobs
+    release: ./bin/rails db:prepare
+  PROCFILE
 
   create_file "script/setup_heroku_env.sh", <<~'BASH', force: true
     #!/bin/bash
+
+    # Script to set Heroku environment variables from application.yml
+    # Usage: ./setup_heroku_env.sh [heroku_app_name]
+
     heroku labs:enable runtime-dyno-metadata
+
     if [ -z "$1" ]; then
       APP_ARGUMENT=""
     else
       APP_ARGUMENT="--app $1"
     fi
 
+    # Make sure application.yml exists
     if [ ! -f config/application.yml ]; then
       echo "Error: config/application.yml file not found."
       exit 1
     fi
 
+    echo "Setting up Heroku environment variables from application.yml..."
+
+    # Read application.yml and convert to Heroku config:set commands
     while IFS=':' read -r key value || [[ -n "$key" ]]; do
-      if [[ -z "$key" || "$key" == \#* ]]; then continue; fi
+      # Skip empty lines and comments
+      if [[ -z "$key" || "$key" == \#* ]]; then
+        continue
+      fi
+      
+      # Trim whitespace from key and value
       key=$(echo "$key" | xargs)
       value=$(echo "$value" | xargs)
-      if [[ -z "$key" || -z "$value" ]]; then continue; fi
+      
+      # Skip if key or value is empty
+      if [[ -z "$key" || -z "$value" ]]; then
+        continue
+      fi
+      
       echo "Setting $key..."
       heroku config:set "$key=$value" $APP_ARGUMENT
     done < config/application.yml
+
+    echo "Finished setting up Heroku environment variables."
   BASH
 end
 
@@ -1041,8 +1070,17 @@ after_bundle do
     RUBY
   end
 
+  append_to_file "app/javascript/application.js" do
+    <<~JS
+      import "trix"
+      import "@rails/actiontext"
+    JS
+  end
+
   rails_command "db:migrate"
-  rails_command "runner \"if File.exist?('db/queue_schema.rb'); load 'db/queue_schema.rb'; load 'db/cache_schema.rb'; load 'db/cable_schema.rb'; end\""
+  rails_command "runner \"load 'db/queue_schema.rb' if File.exist?('db/queue_schema.rb')\""
+  rails_command "runner \"load 'db/cache_schema.rb' if File.exist?('db/cache_schema.rb')\""
+  rails_command "runner \"load 'db/cable_schema.rb' if File.exist?('db/cable_schema.rb')\""
 
   puts "\n========================================================="
   puts " RAILS-CORE TEMPLATE APPLIED SUCCESSFULLY!"

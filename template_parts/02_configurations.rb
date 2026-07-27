@@ -13,6 +13,8 @@ def add_configurations
   environment "config.active_storage.service = :amazon", env: "production"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
 
+  create_file ".ruby-gemset", "#{app_name}\n", force: true
+
   create_file "config/application.yml", <<~'YAML', force: true
     recaptcha_site_key: "dummy_site_key"
     recaptcha_secret_key: "dummy_secret_key"
