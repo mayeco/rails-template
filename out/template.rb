@@ -3,12 +3,14 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 23:54:36 -04 2026
+# Built at: Tue Jul 28 00:12:25 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
 def add_gems
   puts "\n==> 1. Configuring Gemfile with LATEST VERSION of all non-native gems..."
+
+  inject_into_file "Gemfile", "ruby file: \".ruby-version\"\n\n", after: "source \"https://rubygems.org\"\n"
 
   gem 'mission_control-jobs', '>= 1.1'
   gem 'redis', '>= 5.4.1'

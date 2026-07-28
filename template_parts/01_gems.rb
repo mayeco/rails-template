@@ -1,6 +1,8 @@
 def add_gems
   puts "\n==> 1. Configuring Gemfile with LATEST VERSION of all non-native gems..."
 
+  inject_into_file "Gemfile", "ruby file: \".ruby-version\"\n\n", after: "source \"https://rubygems.org\"\n"
+
   gem 'mission_control-jobs', '>= 1.1'
   gem 'redis', '>= 5.4.1'
   gem 'hiredis-client', '>= 0.30.1'
