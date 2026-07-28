@@ -1,11 +1,6 @@
 def add_helpers_services_and_jobs
   puts "\n==> 5. Adding Helpers, Services, and Jobs..."
 
-  create_file "app/helpers/application_helper.rb", <<~'RUBY', force: true
-    module ApplicationHelper
-    end
-  RUBY
-
   create_file "app/services/heroku_maintenance_service.rb", <<~'RUBY', force: true
     class HerokuMaintenanceService
       attr_reader :app_name, :api_token
@@ -72,11 +67,6 @@ def add_helpers_services_and_jobs
           conn.adapter Faraday.default_adapter
         end
       end
-    end
-  RUBY
-
-  create_file "app/jobs/application_job.rb", <<~'RUBY', force: true
-    class ApplicationJob < ActiveJob::Base
     end
   RUBY
 

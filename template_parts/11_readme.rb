@@ -1,8 +1,202 @@
 def add_readme
-  puts "\n==> 8b. Generating Ultra-Detailed README.md..."
+  puts "\n==> 11. Generating Ultra-Detailed README.md and AGENTS.md..."
 
-  create_file "README.md", <<~MARKDOWN, force: true
-    # 🚀 #{app_name.titleize}
+  create_file "AGENTS.md", <<~'MARKDOWN', force: true
+    # AGENTS.md
+
+    This document outlines the architectural conventions, coding standards, commands, and workflows for working on this Ruby on Rails 8.1 application.
+
+    ---
+
+    ## 🎯 Project Overview & Core Philosophy
+
+    This is a production-ready **Ruby on Rails 8.1** web application built with:
+    - **Ruby:** 4.0+
+    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons
+    - **Authentication:** Devise + OmniAuth (Google, Facebook, Microsoft Graph) + reCAPTCHA v3
+    - **Background Jobs & Caching:** Solid Stack (`solid_queue`, `solid_cache`, `solid_cable`) + Mission Control Jobs (`/jobs`)
+    - **Configuration:** Figaro (`config/application.yml` / `Figaro.env.*`)
+    - **Model Identifiers:** `PrefixedIds` (`usr_...`)
+    - **Testing & Security:** Minitest, FactoryBot, RuboCop Omakase, Brakeman, Bundler Audit
+
+    ### 💡 Core Design Principles for AI Agents
+    1. **Follow Conventions:** Respect Rails 8 omakase conventions, thin controllers, rich domain models, and PORO service objects for external logic.
+    2. **Environment Variables via Figaro:** Never use raw `ENV["KEY"]` in application code. Always use `Figaro.env.key_name`.
+    3. **i18n Mandatory:** Never hardcode user-visible text in ERB view templates. Always use `t(".key_name")` or `t("category.key")` and update both `config/locales/es.yml` and `config/locales/en.yml`.
+    4. **Tailwind CSS Styling:** Use utility classes matching the slate/indigo design system (`bg-slate-50`, `bg-indigo-600`, `text-slate-800`).
+    5. **Safety First:** Validate all code changes by running `bin/rails test` and `bin/rubocop`.
+
+    ---
+
+    ## 🛠️ Essential Commands
+
+    ### Development Workflow
+
+    ```bash
+    bin/setup          # Initial environment setup (bundle, db:prepare, tailwind compile)
+    bin/dev            # Start Rails server + Tailwind CSS compiler via Foreman
+    bin/rails console  # Interactive Rails console with Pry
+    ```
+
+    ### Testing & Code Quality
+
+    ```bash
+    bin/rails test                       # Run full Minitest suite
+    bin/rails test test/models/user_test.rb  # Run specific test file
+    bin/rubocop                          # Ruby code style and linting
+    bin/brakeman                         # Static security analysis
+    bin/bundler-audit                    # Vulnerability audit for dependencies
+    ```
+
+    ---
+
+    ## 🗺️ Codebase Map & Conventions
+
+    | Path | Purpose & Architectural Rules |
+    |------|-------------------------------|
+    | `app/models/` | Active Record models. Include `PrefixedIds` and `has_prefix_id :prefix`. Keep business logic in models or services. |
+    | `app/controllers/` | Request handlers inheriting from `ApplicationController`. Use strong parameters (`params.require(...).permit(...)`) and `before_action :authenticate_user!`. |
+    | `app/services/` | Service objects (POROs) for multi-step domain workflows and external API calls (e.g. `HerokuMaintenanceService`). |
+    | `app/jobs/` | Active Job classes processed asynchronously by **Solid Queue**. Use `queue_as :default` or custom queues. |
+    | `app/views/` | ERB templates styled with Tailwind CSS. Must use `t(...)` for all strings and `simple_form_for` for forms. |
+    | `app/views/layouts/mailer.html.erb` | HTML layout for transactional email templates. |
+    | `config/application.yml` | Figaro configuration file containing secrets (listed in `.gitignore`). |
+    | `config/application.yml.example` | Uncommitted template copy of environment variable defaults. |
+    | `config/locales/` | Translation files (`es.yml` default, `en.yml`). |
+    | `db/` | Database migrations and Solid Stack schemas (`queue_schema.rb`, `cache_schema.rb`, `cable_schema.rb`). |
+    | `test/` | Minitest suite with FactoryBot definitions (`test/factories/`). |
+
+    ---
+
+    ## 📐 Code Patterns & Examples
+
+    ### 1. Active Record Model with `PrefixedIds`
+
+    ```ruby
+    # app/models/article.rb
+    # frozen_string_literal: true
+
+    class Article < ApplicationRecord
+      include PrefixedIds
+      has_prefix_id :art
+
+      belongs_to :user
+
+      validates :title, presence: true, length: { maximum: 255 }
+      validates :content, presence: true
+
+      scope :published, -> { where.not(published_at: nil) }
+    end
+    ```
+
+    ### 2. Service Object (PORO) with Faraday & Figaro
+
+    ```ruby
+    # app/services/notification_service.rb
+    # frozen_string_literal: true
+
+    class NotificationService
+      attr_reader :recipient, :message
+
+      def initialize(recipient, message)
+        @recipient = recipient
+        @message = message
+      end
+
+      def self.call(recipient, message)
+        new(recipient, message).call
+      end
+
+      def call
+        return false if recipient.blank? || message.blank?
+
+        response = connection.post("/v1/messages", { to: recipient, body: message }.to_json)
+        response.success?
+  rescue Faraday::Error => e
+    Rails.logger.error "NotificationService error: #{e.message}"
+    false
+  end
+
+  private
+
+  def connection
+    @connection ||= Faraday.new(url: "https://api.notifications.com") do |conn|
+      conn.headers["Authorization"] = "Bearer #{Figaro.env.notification_api_key}"
+          conn.headers["Content-Type"] = "application/json"
+        end
+      end
+    end
+    ```
+
+    ### 3. Controller with i18n & Prefixed ID Lookup
+
+    ```ruby
+    # app/controllers/articles_controller.rb
+    # frozen_string_literal: true
+
+    class ArticlesController < ApplicationController
+      before_action :authenticate_user!
+      before_action :set_article, only: [:show, :edit, :update, :destroy]
+
+      def index
+        @articles = current_user.articles.published
+      end
+
+      def create
+        @article = current_user.articles.build(article_params)
+        if @article.save
+          redirect_to @article, notice: t(".created_successfully")
+        else
+          render :new, status: :unprocessable_entity
+        end
+      end
+
+      private
+
+      def set_article
+        @article = current_user.articles.find_by_prefix_id!(params[:id])
+      end
+
+      def article_params
+        params.require(:article).permit(:title, :content)
+      end
+    end
+    ```
+
+    ### 4. Tailwind CSS View with i18n (`app/views/articles/index.html.erb`)
+
+    ```erb
+    <div class="max-w-4xl mx-auto py-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900"><%= t(".title") %></h1>
+        <%= link_to t(".new_article"), new_article_path, class: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition" %>
+      </div>
+
+      <div class="bg-white shadow-sm border border-slate-200 rounded-2xl divide-y divide-slate-100">
+        <% @articles.each do |article| %>
+          <div class="p-4 flex justify-between items-center">
+            <h2 class="font-semibold text-slate-800"><%= article.title %></h2>
+            <%= link_to t(".view"), article_path(article), class: "text-indigo-600 hover:text-indigo-800 text-sm font-medium" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    ```
+
+    ---
+
+    ## 🚨 Guidelines for Making Changes
+
+    1. **Self-Verification:** Before submitting code, execute:
+       ```bash
+       bin/rails test && bin/rubocop
+       ```
+    2. **Never Expose Secrets:** Ensure new credentials are added to `config/application.yml.example` and accessed via `Figaro.env`.
+    3. **Keep `es.yml` and `en.yml` Synchronized:** Whenever adding view translation keys, update both Spanish (`es.yml`) and English (`en.yml`) locale files.
+  MARKDOWN
+
+  create_file "README.md", (<<~'MARKDOWN').gsub("%APP_NAME_TITLE%", app_name.titleize).gsub("%APP_NAME_RAW%", app_name), force: true
+    # 🚀 %APP_NAME_TITLE%
 
     > A modern, production-ready Ruby on Rails 8.1 application pre-configured with **Tailwind CSS**, **Devise & OmniAuth**, **Solid Stack**, **Figaro**, and full infrastructure tooling.
 
@@ -27,8 +221,7 @@ def add_readme
     ### 1. Requirements
 
     - **Ruby:** `4.0+` (specified in `.ruby-version`)
-    - **RVM Gemset:** `#{app_name}` (specified in `.ruby-gemset`)
-    - **SQLite3:** `2.1+`
+    - **RVM Gemset:** `%APP_NAME_RAW%` (specified in `.ruby-gemset`)
 
     ### 2. Setup Application
 
@@ -62,7 +255,6 @@ def add_readme
     - 💎 **`rails` (`~> 8.1.3`)** — Ruby on Rails 8.1 web framework.
     - ⚡ **`puma` (`>= 5.0`)** — High-performance concurrent HTTP server.
     - 📦 **`propshaft`** — Next-generation Rails asset pipeline.
-    - 🗄️ **`sqlite3` (`>= 2.1`)** — Lightweight embedded SQL engine.
     - 📄 **`jbuilder`** — JSON builder DSL.
 
     ### 🔐 Authentication & Security

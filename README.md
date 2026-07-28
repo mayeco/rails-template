@@ -1,18 +1,20 @@
 # Rails Core Template (`rails-core`)
 
-A modular, production-ready Rails application template generator designed to quickly bootstrap new Ruby on Rails applications with industry best practices, modern dependencies, and built-in infrastructure tooling.
+A modular, production-ready Rails application template generator designed to quickly bootstrap new Ruby on Rails 8.1 applications with industry best practices, modern dependencies, and built-in infrastructure tooling.
 
 ## Features
 
-- **Modular Design**: Structured into organized template parts (`template_parts/*.rb`) and built into a single executable template script via `build_template.sh`.
-- **Authentication & OAuth**: Pre-configured **Devise** with multi-provider **OmniAuth** support (Google OAuth2, Facebook, Microsoft Graph) and **reCAPTCHA v3** protection.
-- **Solid Stack & Queues**: **Solid Queue**, **Solid Cache**, and **Solid Cable** integration, complete with **Mission Control Jobs** dashboard at `/jobs`.
-- **Performance & Caching**: **Redis** / **Hiredis** initializer, **HtmlCompressor** middleware for response minification, and N+1 query detection via **Bullet**.
-- **Monitoring & Debugging**: **Debugbar** and **Letter Opener Web** for development email previews at `/letter_opener`.
-- **UI & Helpers**: Integrated **Tailwind CSS** (`tailwindcss-rails`), **SimpleForm Tailwind** (`simple_form-tailwind`), **ViewComponent**, **Pagy** pagination, **Bootstrap Icons**, and flash message components.
-- **Security & Identifiers**: **PrefixedIds** for human-readable and obfuscated model identifiers.
+- **Modular Architecture**: Structured into 12 discrete, ordered template parts (`template_parts/*.rb`) and compiled into a single executable script via `build_template.sh`.
+- **Authentication & OAuth**: Pre-configured **Devise** with multi-provider **OmniAuth** (Google OAuth2, Facebook, Microsoft Graph), **reCAPTCHA v3** protection, and **PrefixedIds** (`usr_...`).
+- **Solid Stack & Queues**: **Solid Queue** (set as default `queue_adapter`), **Solid Cache**, and **Solid Cable** integration, complete with **Mission Control Jobs** dashboard mounted at `/jobs`.
+- **UI & Frontend**: **Tailwind CSS v4** (`tailwindcss-rails`), **SimpleForm** with custom Tailwind wrappers, **ViewComponent**, **Pagy** pagination, **Bootstrap Icons**, and Tailwind-styled **Flash Messages**.
+- **Internationalization (i18n)**: Default Spanish locale (`:es`) with complete bilingual dictionary files (`es.yml` and `en.yml`) and `devise-i18n`.
+- **Configuration & Security**: Automated **Figaro** configuration (`config/application.yml` git-ignored by default with example file `config/application.yml.example`), and working baseline **Content Security Policy (CSP)**.
+- **Rich Content & Uploads**: Pre-installed **ActionText** and **Active Storage** configured for S3 (`aws-sdk-s3`) and Google Cloud Storage (`google-cloud-storage`).
+- **Monitoring & Debugging**: **Debugbar**, **Bullet** N+1 detector (console/log), and **Letter Opener Web** for development email previews at `/letter_opener`.
 - **Automation & Heroku Tooling**:
-  - `script/setup_heroku_env.sh`: Shell script to automatically push local environment variables from `config/application.yml` to Heroku.
+  - `Procfile`: Ready for Heroku/Thrust web dynos, worker dynos, and release phases.
+  - `script/setup_heroku_env.sh`: Automatically syncs local environment variables from `config/application.yml` to Heroku.
 
 ---
 
@@ -20,20 +22,24 @@ A modular, production-ready Rails application template generator designed to qui
 
 ```text
 .
-├── build_template.sh              # Script to assemble template_parts/*.rb into out/template.rb
-├── generate_test.sh               # Script to generate a test Rails app in tmp/ and verify execution
+├── build_template.sh              # Script to compile template_parts/*.rb into out/template.rb
+├── generate_test.sh               # Test script to generate a Rails app in tmp/ and run verification checks
 ├── template_parts/
-│   ├── 01_gems.rb                 # Core, UI, utility, and development gems
-│   ├── 02_configurations.rb       # Environment settings and initializers
-│   ├── 03_models_and_migrations.rb# Base User model & Devise migration
-│   ├── 04_controllers.rb          # PageController and custom Devise controllers
+│   ├── 01_gems.rb                 # Gemfile dependencies and groups
+│   ├── 02_configurations.rb       # Initializers, Figaro, Storage, CSP, and FactoryBot
+│   ├── 03_models_and_migrations.rb# User model with Devise, PrefixedIds & migrations
+│   ├── 04_controllers.rb          # ApplicationController, PageController, and Devise controllers
 │   ├── 05_helpers_services_and_jobs.rb # Application helpers, Heroku maintenance service & jobs
-│   ├── 06_views.rb                # Layouts, Devise views, and OmniAuth buttons
-│   ├── 07_routes.rb               # Mounted engines, health checks, and root route
-│   ├── 08_automation_scripts.rb   # Infrastructure and Heroku setup scripts
-│   └── 09_main_execution.rb      # Template execution flow and post-bundle setup
+│   ├── 06_locales.rb              # Translation files (config/locales/es.yml and en.yml)
+│   ├── 07_views.rb                # Layouts and Devise web view templates
+│   ├── 08_mailers.rb              # Mailer layouts and Devise email templates
+│   ├── 09_routes.rb               # Application routes (config/routes.rb)
+│   ├── 10_automation_scripts.rb   # Procfile and Heroku environment sync scripts
+│   ├── 11_readme.rb               # Ultra-detailed generated application README.md
+│   ├── 12_directory_readmes.rb    # Specific README.md guides for AI agents in critical directories
+│   └── 13_main_execution.rb      # Main execution flow and after_bundle generators
 └── out/
-    └── template.rb                # Compiled Rails application template (generated file)
+    └── template.rb                # Compiled Rails application template (generated output)
 ```
 
 ---
@@ -56,32 +62,32 @@ bin/rails app:template LOCATION=/path/to/out/template.rb
 
 ### 2. Modifying and Rebuilding the Template
 
-Do **not** edit `out/template.rb` directly, as it is generated from the source files inside `template_parts/`.
+Do **not** edit `out/template.rb` directly, as it is generated from source files in `template_parts/`.
 
-1. Edit the relevant file(s) in `template_parts/`.
-2. Rebuild the main template by running:
+1. Edit the relevant file(s) inside `template_parts/`.
+2. Rebuild the main template script:
 
 ```bash
 ./build_template.sh
 ```
 
-This compiles the template to `out/template.rb`.
+This updates `out/template.rb`.
 
 ### 3. Testing the Template
 
-To generate a test Rails application using the current template and verify that key files and environment loads properly:
+Generate a test Rails application using the compiled template and verify that all database tables, models, and environments boot properly:
 
 ```bash
-./generate_test.sh
+./generate_test.sh --skip-git
 ```
 
-The test application will be created and preserved inside the `./tmp/` directory (which is ignored by Git).
+You can pass any additional flags directly to `generate_test.sh` (e.g., `./generate_test.sh --skip-git --skip-kamal`), which will forward them to `rails new`.
 
 ---
 
 ## Automation Scripts
 
-The generated Rails app includes helpful automation scripts located in `script/`:
+The generated Rails app includes helpful automation scripts in `script/`:
 
 - **Heroku Config Sync**:
   ```bash

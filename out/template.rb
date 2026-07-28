@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 21:37:15 -04 2026
+# Built at: Mon Jul 27 23:21:17 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -60,6 +60,7 @@ def add_configurations
 
   environment "config.i18n.default_locale = :es"
   environment "config.time_zone = 'America/Santiago'"
+  environment "config.active_job.queue_adapter = :solid_queue"
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
@@ -67,8 +68,6 @@ def add_configurations
   environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
-
-  environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
 
   create_file ".ruby-gemset", "#{app_name}\n", force: true
 
@@ -522,11 +521,6 @@ end
 def add_helpers_services_and_jobs
   puts "\n==> 5. Adding Helpers, Services, and Jobs..."
 
-  create_file "app/helpers/application_helper.rb", <<~'RUBY', force: true
-    module ApplicationHelper
-    end
-  RUBY
-
   create_file "app/services/heroku_maintenance_service.rb", <<~'RUBY', force: true
     class HerokuMaintenanceService
       attr_reader :app_name, :api_token
@@ -593,11 +587,6 @@ def add_helpers_services_and_jobs
           conn.adapter Faraday.default_adapter
         end
       end
-    end
-  RUBY
-
-  create_file "app/jobs/application_job.rb", <<~'RUBY', force: true
-    class ApplicationJob < ActiveJob::Base
     end
   RUBY
 
@@ -1282,10 +1271,204 @@ end
 
 # --- Part: 11_readme.rb ---
 def add_readme
-  puts "\n==> 8b. Generating Ultra-Detailed README.md..."
+  puts "\n==> 11. Generating Ultra-Detailed README.md and AGENTS.md..."
 
-  create_file "README.md", <<~MARKDOWN, force: true
-    # 🚀 #{app_name.titleize}
+  create_file "AGENTS.md", <<~'MARKDOWN', force: true
+    # AGENTS.md
+
+    This document outlines the architectural conventions, coding standards, commands, and workflows for working on this Ruby on Rails 8.1 application.
+
+    ---
+
+    ## 🎯 Project Overview & Core Philosophy
+
+    This is a production-ready **Ruby on Rails 8.1** web application built with:
+    - **Ruby:** 4.0+
+    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons
+    - **Authentication:** Devise + OmniAuth (Google, Facebook, Microsoft Graph) + reCAPTCHA v3
+    - **Background Jobs & Caching:** Solid Stack (`solid_queue`, `solid_cache`, `solid_cable`) + Mission Control Jobs (`/jobs`)
+    - **Configuration:** Figaro (`config/application.yml` / `Figaro.env.*`)
+    - **Model Identifiers:** `PrefixedIds` (`usr_...`)
+    - **Testing & Security:** Minitest, FactoryBot, RuboCop Omakase, Brakeman, Bundler Audit
+
+    ### 💡 Core Design Principles for AI Agents
+    1. **Follow Conventions:** Respect Rails 8 omakase conventions, thin controllers, rich domain models, and PORO service objects for external logic.
+    2. **Environment Variables via Figaro:** Never use raw `ENV["KEY"]` in application code. Always use `Figaro.env.key_name`.
+    3. **i18n Mandatory:** Never hardcode user-visible text in ERB view templates. Always use `t(".key_name")` or `t("category.key")` and update both `config/locales/es.yml` and `config/locales/en.yml`.
+    4. **Tailwind CSS Styling:** Use utility classes matching the slate/indigo design system (`bg-slate-50`, `bg-indigo-600`, `text-slate-800`).
+    5. **Safety First:** Validate all code changes by running `bin/rails test` and `bin/rubocop`.
+
+    ---
+
+    ## 🛠️ Essential Commands
+
+    ### Development Workflow
+
+    ```bash
+    bin/setup          # Initial environment setup (bundle, db:prepare, tailwind compile)
+    bin/dev            # Start Rails server + Tailwind CSS compiler via Foreman
+    bin/rails console  # Interactive Rails console with Pry
+    ```
+
+    ### Testing & Code Quality
+
+    ```bash
+    bin/rails test                       # Run full Minitest suite
+    bin/rails test test/models/user_test.rb  # Run specific test file
+    bin/rubocop                          # Ruby code style and linting
+    bin/brakeman                         # Static security analysis
+    bin/bundler-audit                    # Vulnerability audit for dependencies
+    ```
+
+    ---
+
+    ## 🗺️ Codebase Map & Conventions
+
+    | Path | Purpose & Architectural Rules |
+    |------|-------------------------------|
+    | `app/models/` | Active Record models. Include `PrefixedIds` and `has_prefix_id :prefix`. Keep business logic in models or services. |
+    | `app/controllers/` | Request handlers inheriting from `ApplicationController`. Use strong parameters (`params.require(...).permit(...)`) and `before_action :authenticate_user!`. |
+    | `app/services/` | Service objects (POROs) for multi-step domain workflows and external API calls (e.g. `HerokuMaintenanceService`). |
+    | `app/jobs/` | Active Job classes processed asynchronously by **Solid Queue**. Use `queue_as :default` or custom queues. |
+    | `app/views/` | ERB templates styled with Tailwind CSS. Must use `t(...)` for all strings and `simple_form_for` for forms. |
+    | `app/views/layouts/mailer.html.erb` | HTML layout for transactional email templates. |
+    | `config/application.yml` | Figaro configuration file containing secrets (listed in `.gitignore`). |
+    | `config/application.yml.example` | Uncommitted template copy of environment variable defaults. |
+    | `config/locales/` | Translation files (`es.yml` default, `en.yml`). |
+    | `db/` | Database migrations and Solid Stack schemas (`queue_schema.rb`, `cache_schema.rb`, `cable_schema.rb`). |
+    | `test/` | Minitest suite with FactoryBot definitions (`test/factories/`). |
+
+    ---
+
+    ## 📐 Code Patterns & Examples
+
+    ### 1. Active Record Model with `PrefixedIds`
+
+    ```ruby
+    # app/models/article.rb
+    # frozen_string_literal: true
+
+    class Article < ApplicationRecord
+      include PrefixedIds
+      has_prefix_id :art
+
+      belongs_to :user
+
+      validates :title, presence: true, length: { maximum: 255 }
+      validates :content, presence: true
+
+      scope :published, -> { where.not(published_at: nil) }
+    end
+    ```
+
+    ### 2. Service Object (PORO) with Faraday & Figaro
+
+    ```ruby
+    # app/services/notification_service.rb
+    # frozen_string_literal: true
+
+    class NotificationService
+      attr_reader :recipient, :message
+
+      def initialize(recipient, message)
+        @recipient = recipient
+        @message = message
+      end
+
+      def self.call(recipient, message)
+        new(recipient, message).call
+      end
+
+      def call
+        return false if recipient.blank? || message.blank?
+
+        response = connection.post("/v1/messages", { to: recipient, body: message }.to_json)
+        response.success?
+  rescue Faraday::Error => e
+    Rails.logger.error "NotificationService error: #{e.message}"
+    false
+  end
+
+  private
+
+  def connection
+    @connection ||= Faraday.new(url: "https://api.notifications.com") do |conn|
+      conn.headers["Authorization"] = "Bearer #{Figaro.env.notification_api_key}"
+          conn.headers["Content-Type"] = "application/json"
+        end
+      end
+    end
+    ```
+
+    ### 3. Controller with i18n & Prefixed ID Lookup
+
+    ```ruby
+    # app/controllers/articles_controller.rb
+    # frozen_string_literal: true
+
+    class ArticlesController < ApplicationController
+      before_action :authenticate_user!
+      before_action :set_article, only: [:show, :edit, :update, :destroy]
+
+      def index
+        @articles = current_user.articles.published
+      end
+
+      def create
+        @article = current_user.articles.build(article_params)
+        if @article.save
+          redirect_to @article, notice: t(".created_successfully")
+        else
+          render :new, status: :unprocessable_entity
+        end
+      end
+
+      private
+
+      def set_article
+        @article = current_user.articles.find_by_prefix_id!(params[:id])
+      end
+
+      def article_params
+        params.require(:article).permit(:title, :content)
+      end
+    end
+    ```
+
+    ### 4. Tailwind CSS View with i18n (`app/views/articles/index.html.erb`)
+
+    ```erb
+    <div class="max-w-4xl mx-auto py-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900"><%= t(".title") %></h1>
+        <%= link_to t(".new_article"), new_article_path, class: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition" %>
+      </div>
+
+      <div class="bg-white shadow-sm border border-slate-200 rounded-2xl divide-y divide-slate-100">
+        <% @articles.each do |article| %>
+          <div class="p-4 flex justify-between items-center">
+            <h2 class="font-semibold text-slate-800"><%= article.title %></h2>
+            <%= link_to t(".view"), article_path(article), class: "text-indigo-600 hover:text-indigo-800 text-sm font-medium" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    ```
+
+    ---
+
+    ## 🚨 Guidelines for Making Changes
+
+    1. **Self-Verification:** Before submitting code, execute:
+       ```bash
+       bin/rails test && bin/rubocop
+       ```
+    2. **Never Expose Secrets:** Ensure new credentials are added to `config/application.yml.example` and accessed via `Figaro.env`.
+    3. **Keep `es.yml` and `en.yml` Synchronized:** Whenever adding view translation keys, update both Spanish (`es.yml`) and English (`en.yml`) locale files.
+  MARKDOWN
+
+  create_file "README.md", (<<~'MARKDOWN').gsub("%APP_NAME_TITLE%", app_name.titleize).gsub("%APP_NAME_RAW%", app_name), force: true
+    # 🚀 %APP_NAME_TITLE%
 
     > A modern, production-ready Ruby on Rails 8.1 application pre-configured with **Tailwind CSS**, **Devise & OmniAuth**, **Solid Stack**, **Figaro**, and full infrastructure tooling.
 
@@ -1310,8 +1493,7 @@ def add_readme
     ### 1. Requirements
 
     - **Ruby:** `4.0+` (specified in `.ruby-version`)
-    - **RVM Gemset:** `#{app_name}` (specified in `.ruby-gemset`)
-    - **SQLite3:** `2.1+`
+    - **RVM Gemset:** `%APP_NAME_RAW%` (specified in `.ruby-gemset`)
 
     ### 2. Setup Application
 
@@ -1345,7 +1527,6 @@ def add_readme
     - 💎 **`rails` (`~> 8.1.3`)** — Ruby on Rails 8.1 web framework.
     - ⚡ **`puma` (`>= 5.0`)** — High-performance concurrent HTTP server.
     - 📦 **`propshaft`** — Next-generation Rails asset pipeline.
-    - 🗄️ **`sqlite3` (`>= 2.1`)** — Lightweight embedded SQL engine.
     - 📄 **`jbuilder`** — JSON builder DSL.
 
     ### 🔐 Authentication & Security
@@ -1579,7 +1760,335 @@ def add_readme
   MARKDOWN
 end
 
-# --- Part: 12_main_execution.rb ---
+# --- Part: 12_directory_readmes.rb ---
+def add_directory_readmes
+  puts "\n==> 12. Generating AI Agent & Developer Directory READMEs..."
+
+  # 1. app/models/README.md
+  create_file "app/models/README.md", <<~'MARKDOWN', force: true
+    # 📦 Models (`app/models`)
+
+    This directory contains the Active Record models representing the application's domain logic, business rules, and database interfaces.
+
+    ## 📚 Official Documentation
+    - [Active Record Basics Guide](https://guides.rubyonrails.org/active_record_basics.html)
+    - [Active Model Basics Guide](https://guides.rubyonrails.org/active_model_basics.html#model)
+    - [Active Record Validations Guide](https://guides.rubyonrails.org/active_record_validations.html)
+    - [Active Record Associations Guide](https://guides.rubyonrails.org/association_basics.html)
+
+    ## 🎯 Key Conventions & Architectural Rules
+    - **Inheritance:** All persistent models inherit from `ApplicationRecord` (`app/models/application_record.rb`).
+    - **Obfuscated IDs:** Primary models include `PrefixedIds` for typed, salt-hashed public IDs (e.g., `usr_B8511pCq5R`).
+    - **Authentication:** The `User` model integrates Devise authentication, OmniAuth providers (`google_oauth2`, `facebook`, `microsoft_graph`), and reCAPTCHA support.
+
+    ## 💡 Example Model Implementation
+
+    ```ruby
+    # app/models/article.rb
+    # frozen_string_literal: true
+
+    class Article < ApplicationRecord
+      include PrefixedIds
+      has_prefix_id :art
+
+      belongs_to :user
+
+      validates :title, presence: true, length: { maximum: 255 }
+      validates :body, presence: true
+
+      scope :published, -> { where.not(published_at: nil) }
+    end
+    ```
+  MARKDOWN
+
+  # 2. app/controllers/README.md
+  create_file "app/controllers/README.md", <<~'MARKDOWN', force: true
+    # 🕹️ Controllers (`app/controllers`)
+
+    Controllers handle incoming HTTP requests, process business logic via models or service objects, and render HTTP responses or ERB views.
+
+    ## 📚 Official Documentation
+    - [Action Controller Overview](https://guides.rubyonrails.org/action_controller_overview.html)
+    - [Devise Controllers Customization](https://github.com/heartcombo/devise#getting-started)
+
+    ## 🎯 Key Conventions & Architectural Rules
+    - **Inheritance:** All controllers inherit from `ApplicationController`.
+    - **Browser Restrictions:** `ApplicationController` enforces `allow_browser versions: :modern`.
+    - **Authentication Filters:** Use `before_action :authenticate_user!` to guard restricted endpoints.
+    - **Devise Overrides:** Custom authentication controllers reside under `app/controllers/users/` (`RegistrationsController`, `SessionsController`, `OmniauthCallbacksController`).
+
+    ## 💡 Example Controller Implementation
+
+    ```ruby
+    # app/controllers/articles_controller.rb
+    # frozen_string_literal: true
+
+    class ArticlesController < ApplicationController
+      before_action :authenticate_user!
+      before_action :set_article, only: [:show, :edit, :update, :destroy]
+
+      def index
+        @articles = current_user.articles.published
+      end
+
+      private
+
+      def set_article
+        @article = current_user.articles.find_by_prefix_id!(params[:id])
+      end
+
+      def article_params
+        params.require(:article).permit(:title, :body)
+      end
+    end
+    ```
+  MARKDOWN
+
+  # 3. app/views/README.md
+  create_file "app/views/README.md", <<~'MARKDOWN', force: true
+    # 🎨 Views & Layouts (`app/views`)
+
+    This directory contains ERB view templates, partials, and application layouts styled using **Tailwind CSS v4** and **SimpleForm**.
+
+    ## 📚 Official Documentation
+    - [Action View Overview Guide](https://guides.rubyonrails.org/action_view_overview.html)
+    - [Tailwind CSS v4 Documentation](https://tailwindcss.com/docs)
+    - [Rails i18n Guide](https://guides.rubyonrails.org/i18n.html)
+
+    ## 🎯 Key Conventions & Architectural Rules
+    - **No Hardcoded User Strings:** Always use Rails i18n helpers (`t(".key_name")`). Dictionaries reside in `config/locales/es.yml` and `config/locales/en.yml`.
+    - **Styling:** Use Tailwind utility classes (`bg-slate-50`, `rounded-xl`, `shadow-sm`).
+    - **Forms:** Use `simple_form_for` which automatically applies Tailwind form input wrappers (`config/initializers/simple_form_tailwind.rb`).
+    - **Flash Alerts:** Rendered via `<%= render_flash_messages %>` (`FlashRailsMessages::Base`).
+
+    ## 💡 Example View Template (`app/views/articles/index.html.erb`)
+
+    ```erb
+    <div class="max-w-4xl mx-auto py-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900"><%= t(".title") %></h1>
+        <%= link_to t(".new_article"), new_article_path, class: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition" %>
+      </div>
+
+      <div class="bg-white shadow-sm border border-slate-200 rounded-2xl divide-y divide-slate-100">
+        <% @articles.each do |article| %>
+          <div class="p-4 flex justify-between items-center">
+            <div>
+              <h2 class="font-semibold text-slate-800"><%= article.title %></h2>
+            </div>
+            <%= link_to t(".view"), article_path(article), class: "text-indigo-600 hover:text-indigo-800 text-sm font-medium" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    ```
+  MARKDOWN
+
+  # 4. app/jobs/README.md
+  create_file "app/jobs/README.md", <<~'MARKDOWN', force: true
+    # ⚡ Background Jobs (`app/jobs`)
+
+    Active Job background jobs processed by Rails 8's native **Solid Queue** database backend.
+
+    ## 📚 Official Documentation
+    - [Active Job Basics Guide](https://guides.rubyonrails.org/active_job_basics.html)
+    - [Solid Queue Repository](https://github.com/rails/solid_queue)
+
+    ## 🎯 Key Conventions & Architectural Rules
+    - **Adapter:** `config.active_job.queue_adapter = :solid_queue` is configured globally.
+    - **Dashboard:** Mission Control Jobs interface is mounted at `/jobs` in development.
+    - **Recurring Jobs:** Scheduled recurring tasks are configured in `config/recurring.yml`.
+    - **Execution:** To trigger asynchronously, call `MyJob.perform_later(args)`.
+
+    ## 💡 Example Job Implementation
+
+    ```ruby
+    # app/jobs/cleanup_audit_logs_job.rb
+    # frozen_string_literal: true
+
+    class CleanupAuditLogsJob < ApplicationJob
+      queue_as :low_priority
+
+      def perform(days_old = 30)
+        AuditLog.where("created_at < ?", days_old.days.ago).delete_all
+        Rails.logger.info "CleanupAuditLogsJob finished successfully."
+      end
+    end
+    ```
+  MARKDOWN
+
+  # 5. app/services/README.md
+  create_file "app/services/README.md", <<~'MARKDOWN', force: true
+    # ⚙️ Service Objects (`app/services`)
+
+    Plain Old Ruby Objects (POROs) encapsulating complex business logic, third-party API integrations, and multi-step workflows.
+
+    ## 🎯 Key Conventions & Architectural Rules
+    - **Single Responsibility Principle (SRP):** Each service class performs one primary domain task.
+    - **Instantiation:** Use `.call(...)` or `.new(...).perform` class/instance conventions.
+    - **Environment Configuration:** Access API keys via `Figaro.env.<key_name>`.
+    - **Error Handling:** Rescue expected HTTP/Faraday exceptions and log errors cleanly via `Rails.logger`.
+
+    ## 💡 Example Service Implementation
+
+    ```ruby
+    # app/services/payment_processor_service.rb
+    # frozen_string_literal: true
+
+    class PaymentProcessorService
+      attr_reader :user, :amount
+
+      def initialize(user, amount)
+        @user = user
+        @amount = amount
+      end
+
+      def self.call(user, amount)
+        new(user, amount).call
+      end
+
+      def call
+        return false if amount <= 0
+
+        response = connection.post("/charges", { amount: amount, customer: user.email }.to_json)
+        response.success?
+  rescue Faraday::Error => e
+    Rails.logger.error "Payment processing failed: \#{e.message}"
+    false
+  end
+
+  private
+
+  def connection
+    @connection ||= Faraday.new(url: "https://api.paymentgateway.com") do |conn|
+      conn.headers["Authorization"] = "Bearer \#{Figaro.env.payment_api_key}"
+          conn.headers["Content-Type"] = "application/json"
+        end
+      end
+    end
+    ```
+  MARKDOWN
+
+  # 6. app/helpers/README.md
+  create_file "app/helpers/README.md", <<~'MARKDOWN', force: true
+    # 🛠️ View Helpers (`app/helpers`)
+
+    View helpers provide reusable UI formatting logic and HTML rendering utility methods across ERB templates.
+
+    ## 📚 Official Documentation
+    - [ActionView Helpers API](https://api.rubyonrails.org/classes/ActionView/Helpers.html)
+
+    ## 🎯 Key Conventions
+    - **Global Utility Helpers:** `ApplicationHelper` contains application-wide formatting functions.
+    - **Components:** For complex HTML structures or stateful UI elements, prefer `ViewComponent` (`app/components/`) over cluttered helper methods.
+  MARKDOWN
+
+  # 7. config/README.md
+  create_file "config/README.md", <<~'MARKDOWN', force: true
+    # 🛠️ Configuration (`config/`)
+
+    Application configuration files, environment setups, routes, and database settings.
+
+    ## 📚 Official Documentation
+    - [Configuring Rails Applications Guide](https://guides.rubyonrails.org/configuring.html)
+
+    ## 🎯 Key Configuration Files
+    - `application.rb`: Global framework settings, time zone (`America/Santiago`), default locale (`:es`), and autoload paths.
+    - `application.yml`: Environment secrets loaded by **Figaro** (`Figaro.env.*`), ignored by Git.
+    - `application.yml.example`: Uncommitted template copy of environment variable defaults.
+    - `environments/`: Environment-specific settings (`development.rb`, `production.rb`, `test.rb`).
+    - `routes.rb`: URL routing definitions, Devise route scopes, and mounted engines.
+    - `recurring.yml`: Solid Queue recurring job schedules.
+    - `storage.yml`: Active Storage services (`Disk`, `S3`, `GCS`).
+  MARKDOWN
+
+  # 8. config/initializers/README.md
+  create_file "config/initializers/README.md", <<~'MARKDOWN', force: true
+    # 🔌 Initializers (`config/initializers`)
+
+    Initializers execute during application boot to configure gems, singletons, and framework subsystems.
+
+    ## 📚 Official Documentation
+    - [Rails Initializers Guide](https://guides.rubyonrails.org/configuring.html#initializers)
+
+    ## 🎯 Pre-Configured Initializers
+    - `devise.rb`: Devise setup, OmniAuth providers, Turbo responder status codes, and `mailer_sender`.
+    - `simple_form.rb` & `simple_form_tailwind.rb`: SimpleForm field wrappers styled for Tailwind CSS.
+    - `content_security_policy.rb`: Content Security Policy allowing Google reCAPTCHA and CDN assets.
+    - `recaptcha.rb`: Google reCAPTCHA v3 site & secret key setup via Figaro.
+    - `redis.rb`: Redis client global configuration.
+    - `prefixed_ids.rb`: Salt and minimum length for prefixed model IDs.
+    - `flash_rails_messages.rb`: Tailwind CSS alert classes override for flash messages.
+  MARKDOWN
+
+  # 9. db/README.md
+  create_file "db/README.md", <<~'MARKDOWN', force: true
+    # 🗄️ Database Architecture & Schemas (`db/`)
+
+    Database migrations, schema definitions, and seed data.
+
+    ## 📚 Official Documentation
+    - [Active Record Migrations Guide](https://guides.rubyonrails.org/active_record_migrations.html)
+
+    ## 🎯 Key Schemas & Files
+    - `schema.rb`: Primary database schema auto-generated by Active Record.
+    - `queue_schema.rb`: Solid Queue database tables (`solid_queue_*`).
+    - `cache_schema.rb`: Solid Cache database table (`solid_cache_entries`).
+    - `cable_schema.rb`: Solid Cable database table (`solid_cable_messages`).
+    - `migrate/`: Primary application migrations (e.g. `DeviseCreateUsers`, `CreateActiveStorageTables`).
+    - `seeds.rb`: Seed file for populating initial database records (`bin/rails db:seed`).
+
+    ## 💡 Example Migration
+
+    ```ruby
+    # db/migrate/20260727000000_create_categories.rb
+    # frozen_string_literal: true
+
+    class CreateCategories < ActiveRecord::Migration[8.1]
+      def change
+        create_table :categories do |t|
+          t.string :name, null: false
+          t.string :slug, null: false
+
+          t.timestamps null: false
+        end
+
+        add_index :categories, :slug, unique: true
+      end
+    end
+    ```
+  MARKDOWN
+
+  # 10. test/README.md
+  create_file "test/README.md", <<~'MARKDOWN', force: true
+    # 🧪 Testing Suite (`test/`)
+
+    Minitest testing suite with **FactoryBot** fixture generation and security auditing tools.
+
+    ## 📚 Official Documentation
+    - [Testing Rails Applications Guide](https://guides.rubyonrails.org/testing.html)
+
+    ## 🎯 Commands
+
+    ```bash
+    # Run all Minitest tests
+    bin/rails test
+
+    # Run a specific model test
+    bin/rails test test/models/user_test.rb
+
+    # Security & Code Audits
+    bin/brakeman
+    bin/bundler-audit
+    bin/rubocop
+    ```
+
+    ## 🏭 Factories (`test/factories/`)
+    - `test/factories/users.rb`: Pre-configured user factory using `FactoryBot`.
+  MARKDOWN
+end
+
+# --- Part: 13_main_execution.rb ---
 # ==============================================================================
 # Main flow execution
 # ==============================================================================
@@ -1595,13 +2104,14 @@ add_mailers
 add_routes
 add_automation_scripts
 add_readme
+add_directory_readmes
 
 after_bundle do
   puts "\n==> Running default generators: Figaro, Tailwind CSS, Simple Form Tailwind, Devise, Action Text, Active Storage, Solid Stack..."
   run "bundle exec figaro install"
 
   append_to_file "config/application.yml" do
-    <<~YAML
+    <<~'YAML'
       recaptcha_site_key: "dummy_site_key"
       recaptcha_secret_key: "dummy_secret_key"
       redis_url: "redis://localhost:6379/0"
@@ -1639,7 +2149,7 @@ after_bundle do
 
   puts "\n==> Customizing config/initializers/devise.rb with OmniAuth and Hotwire/Turbo..."
   inject_into_file "config/initializers/devise.rb", after: "Devise.setup do |config|\n" do
-    <<~RUBY
+    <<~'RUBY'
       config.responder.error_status = :unprocessable_entity
       config.responder.redirect_status = :see_other
 
@@ -1663,7 +2173,7 @@ after_bundle do
 
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
-      <<~RUBY
+      <<~'RUBY'
         unless File.exist?("config/application.yml")
           puts "\\n== Copying config/application.yml.example to config/application.yml =="
           FileUtils.cp("config/application.yml.example", "config/application.yml")

@@ -13,13 +13,14 @@ add_mailers
 add_routes
 add_automation_scripts
 add_readme
+add_directory_readmes
 
 after_bundle do
   puts "\n==> Running default generators: Figaro, Tailwind CSS, Simple Form Tailwind, Devise, Action Text, Active Storage, Solid Stack..."
   run "bundle exec figaro install"
 
   append_to_file "config/application.yml" do
-    <<~YAML
+    <<~'YAML'
       recaptcha_site_key: "dummy_site_key"
       recaptcha_secret_key: "dummy_secret_key"
       redis_url: "redis://localhost:6379/0"
@@ -57,7 +58,7 @@ after_bundle do
 
   puts "\n==> Customizing config/initializers/devise.rb with OmniAuth and Hotwire/Turbo..."
   inject_into_file "config/initializers/devise.rb", after: "Devise.setup do |config|\n" do
-    <<~RUBY
+    <<~'RUBY'
       config.responder.error_status = :unprocessable_entity
       config.responder.redirect_status = :see_other
 
@@ -81,7 +82,7 @@ after_bundle do
 
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
-      <<~RUBY
+      <<~'RUBY'
         unless File.exist?("config/application.yml")
           puts "\\n== Copying config/application.yml.example to config/application.yml =="
           FileUtils.cp("config/application.yml.example", "config/application.yml")
