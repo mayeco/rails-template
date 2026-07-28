@@ -1,8 +1,8 @@
 def add_configurations
   puts "\n==> 2. Configuring Environments and Base Initializers..."
 
-  environment "config.i18n.default_locale = :es"
-  environment "config.time_zone = 'America/Santiago'"
+  environment "config.i18n.default_locale = Figaro.env.app_main_locale!.to_sym"
+  environment "config.time_zone = Figaro.env.app_main_timezone!"
   environment "config.active_job.queue_adapter = :solid_queue"
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
@@ -17,6 +17,8 @@ def add_configurations
   append_to_file ".gitignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".gitignore")
 
   create_file "config/application.yml.example", <<~'YAML', force: true
+    app_main_locale: "es"
+    app_main_timezone: "America/Santiago"
     recaptcha_site_key: "dummy_site_key"
     recaptcha_secret_key: "dummy_secret_key"
     redis_url: "redis://localhost:6379/0"

@@ -21,6 +21,8 @@ after_bundle do
 
   append_to_file "config/application.yml" do
     <<~'YAML'
+      app_main_locale: "es"
+      app_main_timezone: "America/Santiago"
       recaptcha_site_key: "dummy_site_key"
       recaptcha_secret_key: "dummy_secret_key"
       redis_url: "redis://localhost:6379/0"
