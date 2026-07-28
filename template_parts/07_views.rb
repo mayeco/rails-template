@@ -1,5 +1,5 @@
 def add_views
-  puts "\n==> 6. Creating Views and Layouts..."
+  puts "\n==> 7. Creating Views and Layouts..."
 
   create_file "app/views/layouts/application.html.erb", <<~'ERB', force: true
     <!DOCTYPE html>
@@ -19,7 +19,7 @@ def add_views
       <link rel="apple-touch-icon" href="/icon.png">
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-      <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+      <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
 
       <%= debugbar_head if defined? Debugbar %>
     </head>
@@ -32,7 +32,7 @@ def add_views
         <% if user_signed_in? %>
           <div class="text-center mt-6">
             <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition" do %>
-              <i class="bi bi-box-arrow-right"></i> Log out
+              <i class="bi bi-box-arrow-right"></i> <%= t("layouts.application.log_out") %>
             <% end %>
           </div>
         <% end %>
@@ -48,11 +48,11 @@ def add_views
         <%= Rails.application.class.module_parent_name.titleize %>
       </h1>
       <p class="text-lg text-slate-600 mb-8">
-        Welcome back, <span class="font-semibold text-slate-800"><%= current_user.email %></span>!
+        <%= t(".welcome_back", email: current_user.email) %>
       </p>
       <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-6">
         <p class="text-sm text-slate-500">
-          Find this view in <code class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs">app/views/page/index.html.erb</code>
+          <%= t(".find_me_in", path: "app/views/page/index.html.erb") %>
         </p>
       </div>
     </div>
@@ -63,8 +63,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Welcome back</h2>
-          <p class="text-sm text-slate-500 mt-1">Please log in to your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".welcome_back") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".please_log_in") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
@@ -86,7 +86,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Log in", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".log_in"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -99,8 +99,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Create an account</h2>
-          <p class="text-sm text-slate-500 mt-1">Sign up to get started</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".create_account") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".sign_up_to_get_started") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
@@ -123,7 +123,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Sign up", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".sign_up"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -136,8 +136,8 @@ def add_views
     <div class="max-w-lg mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Edit Account</h2>
-          <p class="text-sm text-slate-500 mt-1">Update your profile settings and password</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".edit_account") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".update_profile_settings") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
@@ -148,7 +148,7 @@ def add_views
 
             <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
               <div class="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs">
-                Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong>
+                <%= t(".currently_waiting_confirmation_for", email: resource.unconfirmed_email) %>
               </div>
             <% end %>
 
@@ -168,18 +168,18 @@ def add_views
           </div>
 
           <div class="flex items-center justify-between mt-6">
-            <%= link_to "Back", :back, class: "px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition" %>
-            <%= f.button :submit, "Update Profile", class: "py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= link_to t(".back"), :back, class: "px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition" %>
+            <%= f.button :submit, t(".update_profile"), class: "py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
         <div class="mt-8 pt-6 border-t border-slate-200">
           <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <h3 class="text-sm font-semibold text-red-900">Cancel my account</h3>
-              <p class="text-xs text-red-600 mt-0.5">Permanently delete your account and data.</p>
+              <h3 class="text-sm font-semibold text-red-900"><%= t(".cancel_account") %></h3>
+              <p class="text-xs text-red-600 mt-0.5"><%= t(".permanently_delete_account") %></p>
             </div>
-            <%= button_to "Delete Account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
+            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
           </div>
         </div>
       </div>
@@ -190,8 +190,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Forgot password?</h2>
-          <p class="text-sm text-slate-500 mt-1">Enter your email address to reset your password</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".forgot_password") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".enter_email_to_reset") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
@@ -205,7 +205,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Send reset instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".send_reset_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -218,8 +218,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Change password</h2>
-          <p class="text-sm text-slate-500 mt-1">Set a new password for your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".change_password") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".set_new_password") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
@@ -243,7 +243,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Change my password", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".change_my_password"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -256,8 +256,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Resend confirmation</h2>
-          <p class="text-sm text-slate-500 mt-1">Request a new account confirmation email</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_confirmation") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".request_new_confirmation_email") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
@@ -273,7 +273,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Resend instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".resend_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -286,8 +286,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Resend unlock</h2>
-          <p class="text-sm text-slate-500 mt-1">Request instructions to unlock your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_unlock") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".request_unlock_instructions") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
@@ -302,7 +302,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Resend unlock instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".resend_unlock_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -314,23 +314,23 @@ def add_views
   create_file "app/views/devise/shared/_links.html.erb", <<~'ERB', force: true
     <div class="mt-6 pt-4 border-t border-slate-200 text-center text-xs text-slate-500 space-y-2">
       <%- if controller_name != 'sessions' %>
-        <div>Already have an account? <%= link_to "Log in", new_session_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".already_have_account") %> <%= link_to t(".log_in"), new_session_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
       <% end %>
 
       <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
-        <div>Don't have an account? <%= link_to "Sign up", new_registration_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".dont_have_account") %> <%= link_to t(".sign_up"), new_registration_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
       <% end %>
 
       <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-        <div><%= link_to "Forgot your password?", new_password_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".forgot_your_password"), new_password_path(resource_name), class: "hover:underline" %></div>
       <% end %>
 
       <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
-        <div><%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_confirmation_instructions"), new_confirmation_path(resource_name), class: "hover:underline" %></div>
       <% end %>
 
       <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
-        <div><%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_unlock_instructions"), new_unlock_path(resource_name), class: "hover:underline" %></div>
       <% end %>
     </div>
 
@@ -340,9 +340,9 @@ def add_views
           <div class="flex-grow border-t border-slate-200"></div>
           <span class="flex-shrink mx-3 text-xs text-slate-400 uppercase tracking-wider">
             <%- if controller_name == 'sessions' %>
-              or log in with
+              <%= t(".or_log_in_with") %>
             <%- else %>
-              or create account with
+              <%= t(".or_create_account_with") %>
             <% end %>
           </span>
           <div class="flex-grow border-t border-slate-200"></div>
@@ -376,65 +376,5 @@ def add_views
         </ul>
       </div>
     <% end %>
-  ERB
-
-  create_file "app/views/layouts/mailer.html.erb", <<~'ERB', force: true
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
-          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; }
-          .footer { margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; }
-          a { color: #4f46e5; text-decoration: none; font-weight: 500; }
-        </style>
-      </head>
-
-      <body>
-        <div class="container">
-          <%= yield %>
-        </div>
-        <div class="footer">
-          <p>&copy; <%= Time.current.year %> <%= Rails.application.class.module_parent_name.titleize %>. All rights reserved.</p>
-        </div>
-      </body>
-    </html>
-  ERB
-
-  create_file "app/views/devise/mailer/confirmation_instructions.html.erb", <<~'ERB', force: true
-    <p>Welcome <%= @email %>!</p>
-    <p>You can confirm your account email through the link below:</p>
-    <p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
-  ERB
-
-  create_file "app/views/devise/mailer/email_changed.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @email %>!</p>
-
-    <% if @resource.try(:unconfirmed_email?) %>
-      <p>We're contacting you to notify you that your email is being changed to <%= @resource.unconfirmed_email %>.</p>
-    <% else %>
-      <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
-    <% end %>
-  ERB
-
-  create_file "app/views/devise/mailer/password_change.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>We're contacting you to notify you that your password has been changed.</p>
-  ERB
-
-  create_file "app/views/devise/mailer/reset_password_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Someone has requested a link to change your password. You can do this through the link below.</p>
-    <p><%= link_to 'Change my password', edit_password_url(@resource, reset_password_token: @token) %></p>
-    <p>If you didn't request this, please ignore this email.</p>
-    <p>Your password won't change until you access the link above and create a new one.</p>
-  ERB
-
-  create_file "app/views/devise/mailer/unlock_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
-    <p>Click the link below to unlock your account:</p>
-    <p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
   ERB
 end

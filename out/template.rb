@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 19:03:06 -04 2026
+# Built at: Mon Jul 27 20:53:34 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -27,7 +27,6 @@ def add_gems
   gem 'devise-i18n', '>= 1.16'
 
   # Utilities & UI
-  gem 'amazing_print', '>= 2.0'
   gem 'aws-sdk-s3', '>= 1.228.1', require: false
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
@@ -41,9 +40,9 @@ def add_gems
   gem 'pagy', '>= 43.6.1'
   gem 'view_component', '>= 4.12'
   gem 'recaptcha', '>= 5.21.2'
-  gem 'htmlcompressor', '>= 0.4.0'
 
   gem_group :development do
+    gem 'amazing_print', '>= 2.0'
     gem 'bullet', '>= 8.1.3'
     gem 'letter_opener_web', '>= 3.0'
     gem 'pry', '>= 0.16.0'
@@ -62,32 +61,52 @@ def add_configurations
 
   environment "config.i18n.default_locale = :es"
   environment "config.time_zone = 'America/Santiago'"
-  environment "config.middleware.use HtmlCompressor::Rack unless Rails.env.development?"
 
-  environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.alert = true\n    Bullet.bullet_logger = true\n  end", env: "development"
+  environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
 
-  environment "config.active_storage.service = :amazon", env: "production"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
 
   create_file ".ruby-gemset", "#{app_name}\n", force: true
 
-  create_file "config/application.yml", <<~'YAML', force: true
-    recaptcha_site_key: "dummy_site_key"
-    recaptcha_secret_key: "dummy_secret_key"
-    redis_url: "redis://localhost:6379/0"
-    prefixed_ids_salt: "default_salt_key_123"
-    google_client_id: "dummy_google_id"
-    google_client_secret: "dummy_google_secret"
-    facebook_app_id: "dummy_facebook_id"
-    facebook_app_secret: "dummy_facebook_secret"
-    azure_client_id: "dummy_azure_id"
-    azure_client_secret: "dummy_azure_secret"
-    heroku_app_name: "dummy_heroku_app_name"
-    heroku_api_token: "dummy_heroku_api_token"
+  append_to_file ".gitignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".gitignore")
+
+  create_file "config/storage.yml", <<~'YAML', force: true
+    test:
+      service: Disk
+      root: <%= Rails.root.join("tmp/storage") %>
+
+    local:
+      service: Disk
+      root: <%= Rails.root.join("storage") %>
+
+    amazon:
+      service: S3
+      access_key_id: <%= Figaro.env.aws_access_key_id %>
+      secret_access_key: <%= Figaro.env.aws_secret_access_key %>
+      region: <%= Figaro.env.aws_region || "us-east-1" %>
+      bucket: <%= Figaro.env.aws_bucket %>
+
+    google:
+      service: GCS
+      project: <%= Figaro.env.gcs_project || "dummy_gcs_project" %>
+      credentials: <%= Figaro.env.gcs_credentials || Rails.root.join("config/gcs.json") %>
+      bucket: <%= Figaro.env.gcs_bucket || "dummy_gcs_bucket" %>
   YAML
+
+  create_file "test/factories/users.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    FactoryBot.define do
+      factory :user do
+        sequence(:email) { |n| "user#{n}@example.com" }
+        password { "password123" }
+        confirmed_at { Time.current }
+      end
+    end
+  RUBY
 
   create_file "config/initializers/simple_form.rb", <<~'RUBY', force: true
     # frozen_string_literal: true
@@ -131,14 +150,10 @@ def add_configurations
 
     module FlashRailsMessages
       class Base
-        def alert_element(type, message)
-          content_tag :div, class: alert_classes(type), role: "alert" do
-            message.html_safe
-          end
-        end
+        private
 
-        def alert_classes(type)
-          "p-4 mb-4 text-sm rounded-xl font-medium shadow-sm flex items-center justify-between #{alert_type_classes[type] || 'bg-slate-100 text-slate-800 border border-slate-200'}"
+        def default_alert_classes
+          "p-4 mb-4 text-sm rounded-xl font-medium shadow-sm flex items-center justify-between"
         end
 
         def alert_type_classes
@@ -225,6 +240,10 @@ def add_models_and_migrations
           t.string   :unlock_token
           t.datetime :locked_at
 
+          ## OmniAuth
+          t.string   :provider
+          t.string   :uid
+
           if t.respond_to?(:jsonb)
             t.jsonb :omniauth_providers, null: false, default: {}
           else
@@ -238,6 +257,7 @@ def add_models_and_migrations
         add_index :users, :reset_password_token, unique: true
         add_index :users, :confirmation_token,   unique: true
         add_index :users, :unlock_token,         unique: true
+        add_index :users, [:provider, :uid],     unique: true
       end
     end
   RUBY
@@ -345,27 +365,6 @@ def add_controllers
       end
     end
   RUBY
-
-  create_file "app/controllers/users/confirmations_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::ConfirmationsController < Devise::ConfirmationsController
-    end
-  RUBY
-
-  create_file "app/controllers/users/passwords_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::PasswordsController < Devise::PasswordsController
-    end
-  RUBY
-
-  create_file "app/controllers/users/unlocks_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::UnlocksController < Devise::UnlocksController
-    end
-  RUBY
 end
 
 # --- Part: 05_helpers_services_and_jobs.rb ---
@@ -374,23 +373,6 @@ def add_helpers_services_and_jobs
 
   create_file "app/helpers/application_helper.rb", <<~'RUBY', force: true
     module ApplicationHelper
-      def omniauth_icon(provider)
-        case provider
-        when :google_oauth2
-          "google"
-        when :facebook
-          "facebook"
-        when :microsoft_graph
-          "microsoft"
-        else
-          provider
-        end
-      end
-    end
-  RUBY
-
-  create_file "app/helpers/page_helper.rb", <<~'RUBY', force: true
-    module PageHelper
     end
   RUBY
 
@@ -419,18 +401,19 @@ def add_helpers_services_and_jobs
           req.body = { maintenance: maintenance_enabled }.to_json
         end
 
-        if response.success?
-          Rails.logger.info "Maintenance mode #{maintenance_enabled ? 'enabled' : 'disabled'} for #{app_name}"
-          true
-        else
+        unless response.success?
           Rails.logger.error "Failed to #{maintenance_enabled ? 'enable' : 'disable'} maintenance mode: #{response.body}"
-          false
+          return false
         end
 
-        if maintenance_enabled && response.success?
+        Rails.logger.info "Maintenance mode #{maintenance_enabled ? 'enabled' : 'disabled'} for #{app_name}"
+
+        if maintenance_enabled
           scale_dynos(dyno_type: "web")
           scale_dynos(dyno_type: "worker")
         end
+
+        true
       rescue Faraday::Error => e
         Rails.logger.error "Heroku API error: #{e.message}"
         false
@@ -482,6 +465,8 @@ def add_helpers_services_and_jobs
       queue_as :default
 
       def perform(*args)
+        return if Figaro.env.heroku_api_token.to_s.start_with?("dummy") || Figaro.env.heroku_api_token.blank?
+
         if HerokuMaintenanceService.new.enable_maintenance_mode
           Rails.logger.info "Heroku maintenance mode enabled successfully."
         else
@@ -492,9 +477,136 @@ def add_helpers_services_and_jobs
   RUBY
 end
 
-# --- Part: 06_views.rb ---
+# --- Part: 06_locales.rb ---
+def add_locales
+  puts "\n==> 6. Creating Locales and Translations..."
+
+  create_file "config/locales/es.yml", <<~'YAML', force: true
+    es:
+      layouts:
+        application:
+          log_out: "Cerrar sesión"
+      page:
+        index:
+          welcome_back: "Bienvenido de nuevo, %{email}!"
+          find_me_in: "Encuentra esta vista en %{path}"
+      devise:
+        sessions:
+          new:
+            welcome_back: "Bienvenido de nuevo"
+            please_log_in: "Por favor inicia sesión en tu cuenta"
+            log_in: "Iniciar sesión"
+        registrations:
+          new:
+            create_account: "Crear una cuenta"
+            sign_up_to_get_started: "Regístrate para comenzar"
+            sign_up: "Registrarse"
+          edit:
+            edit_account: "Editar Cuenta"
+            update_profile_settings: "Actualiza la configuración de tu perfil y contraseña"
+            currently_waiting_confirmation_for: "Esperando confirmación para: %{email}"
+            back: "Volver"
+            update_profile: "Actualizar Perfil"
+            cancel_account: "Cancelar mi cuenta"
+            permanently_delete_account: "Eliminar permanentemente tu cuenta y todos los datos."
+            delete_account: "Eliminar Cuenta"
+        passwords:
+          new:
+            forgot_password: "¿Olvidaste tu contraseña?"
+            enter_email_to_reset: "Ingresa tu correo electrónico para restablecer tu contraseña"
+            send_reset_instructions: "Enviar instrucciones de restablecimiento"
+          edit:
+            change_password: "Cambiar contraseña"
+            set_new_password: "Establece una nueva contraseña para tu cuenta"
+            change_my_password: "Cambiar mi contraseña"
+        confirmations:
+          new:
+            resend_confirmation: "Reenviar confirmación"
+            request_new_confirmation_email: "Solicitar un nuevo correo de confirmación de cuenta"
+            resend_instructions: "Reenviar instrucciones"
+        unlocks:
+          new:
+            resend_unlock: "Reenviar desbloqueo"
+            request_unlock_instructions: "Solicitar instrucciones para desbloquear tu cuenta"
+            resend_unlock_instructions: "Reenviar instrucciones de desbloqueo"
+        shared:
+          links:
+            already_have_account: "¿Ya tienes una cuenta?"
+            log_in: "Iniciar sesión"
+            dont_have_account: "¿No tienes una cuenta?"
+            sign_up: "Registrarse"
+            forgot_your_password: "¿Olvidaste tu contraseña?"
+            didnt_receive_confirmation_instructions: "¿No recibiste las instrucciones de confirmación?"
+            didnt_receive_unlock_instructions: "¿No recibiste las instrucciones de desbloqueo?"
+            or_log_in_with: "o inicia sesión con"
+            or_create_account_with: "o crea tu cuenta con"
+  YAML
+
+  create_file "config/locales/en.yml", <<~'YAML', force: true
+    en:
+      layouts:
+        application:
+          log_out: "Log out"
+      page:
+        index:
+          welcome_back: "Welcome back, %{email}!"
+          find_me_in: "Find this view in %{path}"
+      devise:
+        sessions:
+          new:
+            welcome_back: "Welcome back"
+            please_log_in: "Please log in to your account"
+            log_in: "Log in"
+        registrations:
+          new:
+            create_account: "Create an account"
+            sign_up_to_get_started: "Sign up to get started"
+            sign_up: "Sign up"
+          edit:
+            edit_account: "Edit Account"
+            update_profile_settings: "Update your profile settings and password"
+            currently_waiting_confirmation_for: "Currently waiting confirmation for: %{email}"
+            back: "Back"
+            update_profile: "Update Profile"
+            cancel_account: "Cancel my account"
+            permanently_delete_account: "Permanently delete your account and all data."
+            delete_account: "Delete Account"
+        passwords:
+          new:
+            forgot_password: "Forgot password?"
+            enter_email_to_reset: "Enter your email address to reset your password"
+            send_reset_instructions: "Send reset instructions"
+          edit:
+            change_password: "Change password"
+            set_new_password: "Set a new password for your account"
+            change_my_password: "Change my password"
+        confirmations:
+          new:
+            resend_confirmation: "Resend confirmation"
+            request_new_confirmation_email: "Request a new account confirmation email"
+            resend_instructions: "Resend instructions"
+        unlocks:
+          new:
+            resend_unlock: "Resend unlock"
+            request_unlock_instructions: "Request instructions to unlock your account"
+            resend_unlock_instructions: "Resend unlock instructions"
+        shared:
+          links:
+            already_have_account: "Already have an account?"
+            log_in: "Log in"
+            dont_have_account: "Don't have an account?"
+            sign_up: "Sign up"
+            forgot_your_password: "Forgot your password?"
+            didnt_receive_confirmation_instructions: "Didn't receive confirmation instructions?"
+            didnt_receive_unlock_instructions: "Didn't receive unlock instructions?"
+            or_log_in_with: "or log in with"
+            or_create_account_with: "or create account with"
+  YAML
+end
+
+# --- Part: 07_views.rb ---
 def add_views
-  puts "\n==> 6. Creating Views and Layouts..."
+  puts "\n==> 7. Creating Views and Layouts..."
 
   create_file "app/views/layouts/application.html.erb", <<~'ERB', force: true
     <!DOCTYPE html>
@@ -514,7 +626,7 @@ def add_views
       <link rel="apple-touch-icon" href="/icon.png">
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-      <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+      <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
 
       <%= debugbar_head if defined? Debugbar %>
     </head>
@@ -527,7 +639,7 @@ def add_views
         <% if user_signed_in? %>
           <div class="text-center mt-6">
             <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition" do %>
-              <i class="bi bi-box-arrow-right"></i> Log out
+              <i class="bi bi-box-arrow-right"></i> <%= t("layouts.application.log_out") %>
             <% end %>
           </div>
         <% end %>
@@ -543,11 +655,11 @@ def add_views
         <%= Rails.application.class.module_parent_name.titleize %>
       </h1>
       <p class="text-lg text-slate-600 mb-8">
-        Welcome back, <span class="font-semibold text-slate-800"><%= current_user.email %></span>!
+        <%= t(".welcome_back", email: current_user.email) %>
       </p>
       <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-6">
         <p class="text-sm text-slate-500">
-          Find this view in <code class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs">app/views/page/index.html.erb</code>
+          <%= t(".find_me_in", path: "app/views/page/index.html.erb") %>
         </p>
       </div>
     </div>
@@ -558,8 +670,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Welcome back</h2>
-          <p class="text-sm text-slate-500 mt-1">Please log in to your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".welcome_back") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".please_log_in") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
@@ -581,7 +693,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Log in", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".log_in"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -594,8 +706,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Create an account</h2>
-          <p class="text-sm text-slate-500 mt-1">Sign up to get started</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".create_account") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".sign_up_to_get_started") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
@@ -618,7 +730,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Sign up", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".sign_up"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -631,8 +743,8 @@ def add_views
     <div class="max-w-lg mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Edit Account</h2>
-          <p class="text-sm text-slate-500 mt-1">Update your profile settings and password</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".edit_account") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".update_profile_settings") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
@@ -643,7 +755,7 @@ def add_views
 
             <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
               <div class="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs">
-                Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong>
+                <%= t(".currently_waiting_confirmation_for", email: resource.unconfirmed_email) %>
               </div>
             <% end %>
 
@@ -663,18 +775,18 @@ def add_views
           </div>
 
           <div class="flex items-center justify-between mt-6">
-            <%= link_to "Back", :back, class: "px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition" %>
-            <%= f.button :submit, "Update Profile", class: "py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= link_to t(".back"), :back, class: "px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition" %>
+            <%= f.button :submit, t(".update_profile"), class: "py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
         <div class="mt-8 pt-6 border-t border-slate-200">
           <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <h3 class="text-sm font-semibold text-red-900">Cancel my account</h3>
-              <p class="text-xs text-red-600 mt-0.5">Permanently delete your account and data.</p>
+              <h3 class="text-sm font-semibold text-red-900"><%= t(".cancel_account") %></h3>
+              <p class="text-xs text-red-600 mt-0.5"><%= t(".permanently_delete_account") %></p>
             </div>
-            <%= button_to "Delete Account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
+            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
           </div>
         </div>
       </div>
@@ -685,8 +797,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Forgot password?</h2>
-          <p class="text-sm text-slate-500 mt-1">Enter your email address to reset your password</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".forgot_password") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".enter_email_to_reset") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
@@ -700,7 +812,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Send reset instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".send_reset_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -713,8 +825,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Change password</h2>
-          <p class="text-sm text-slate-500 mt-1">Set a new password for your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".change_password") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".set_new_password") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
@@ -738,7 +850,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Change my password", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".change_my_password"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -751,8 +863,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Resend confirmation</h2>
-          <p class="text-sm text-slate-500 mt-1">Request a new account confirmation email</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_confirmation") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".request_new_confirmation_email") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
@@ -768,7 +880,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Resend instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".resend_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -781,8 +893,8 @@ def add_views
     <div class="max-w-md mx-auto">
       <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900">Resend unlock</h2>
-          <p class="text-sm text-slate-500 mt-1">Request instructions to unlock your account</p>
+          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_unlock") %></h2>
+          <p class="text-sm text-slate-500 mt-1"><%= t(".request_unlock_instructions") %></p>
         </div>
 
         <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
@@ -797,7 +909,7 @@ def add_views
           </div>
 
           <div class="mt-6">
-            <%= f.button :submit, "Resend unlock instructions", class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+            <%= f.button :submit, t(".resend_unlock_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
           </div>
         <% end %>
 
@@ -809,23 +921,23 @@ def add_views
   create_file "app/views/devise/shared/_links.html.erb", <<~'ERB', force: true
     <div class="mt-6 pt-4 border-t border-slate-200 text-center text-xs text-slate-500 space-y-2">
       <%- if controller_name != 'sessions' %>
-        <div>Already have an account? <%= link_to "Log in", new_session_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".already_have_account") %> <%= link_to t(".log_in"), new_session_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
       <% end %>
 
       <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
-        <div>Don't have an account? <%= link_to "Sign up", new_registration_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".dont_have_account") %> <%= link_to t(".sign_up"), new_registration_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
       <% end %>
 
       <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-        <div><%= link_to "Forgot your password?", new_password_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".forgot_your_password"), new_password_path(resource_name), class: "hover:underline" %></div>
       <% end %>
 
       <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
-        <div><%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_confirmation_instructions"), new_confirmation_path(resource_name), class: "hover:underline" %></div>
       <% end %>
 
       <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
-        <div><%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_unlock_instructions"), new_unlock_path(resource_name), class: "hover:underline" %></div>
       <% end %>
     </div>
 
@@ -835,9 +947,9 @@ def add_views
           <div class="flex-grow border-t border-slate-200"></div>
           <span class="flex-shrink mx-3 text-xs text-slate-400 uppercase tracking-wider">
             <%- if controller_name == 'sessions' %>
-              or log in with
+              <%= t(".or_log_in_with") %>
             <%- else %>
-              or create account with
+              <%= t(".or_create_account_with") %>
             <% end %>
           </span>
           <div class="flex-grow border-t border-slate-200"></div>
@@ -846,7 +958,7 @@ def add_views
         <div class="mt-3 flex gap-2">
           <%- resource_class.omniauth_providers.each do |provider| %>
             <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "flex-1 inline-flex justify-center items-center gap-2 py-2 px-3 border border-slate-300 rounded-lg shadow-sm bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2", form_class: "flex-1" do %>
-              <i class="bi bi-<%= omniauth_icon(provider) %> text-base"></i>
+              <i class="bi bi-<%= provider.to_s.split('_').first %> text-base"></i>
               <span class="capitalize"><%= provider.to_s.split('_').first %></span>
             <% end %>
           <% end %>
@@ -871,6 +983,35 @@ def add_views
         </ul>
       </div>
     <% end %>
+  ERB
+end
+
+# --- Part: 08_mailers.rb ---
+def add_mailers
+  puts "\n==> 8. Creating Mailer Views and Layouts..."
+
+  create_file "app/views/layouts/mailer.html.erb", <<~'ERB', force: true
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; }
+          .footer { margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; }
+          a { color: #4f46e5; text-decoration: none; font-weight: 500; }
+        </style>
+      </head>
+
+      <body>
+        <div class="container">
+          <%= yield %>
+        </div>
+        <div class="footer">
+          <p>&copy; <%= Time.current.year %> <%= Rails.application.class.module_parent_name.titleize %>. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
   ERB
 
   create_file "app/views/devise/mailer/confirmation_instructions.html.erb", <<~'ERB', force: true
@@ -910,23 +1051,20 @@ def add_views
   ERB
 end
 
-# --- Part: 07_routes.rb ---
+# --- Part: 09_routes.rb ---
 def add_routes
   puts "\n==> 7. Configuring Routes (config/routes.rb)..."
 
   create_file "config/routes.rb", <<~'RUBY', force: true
     Rails.application.routes.draw do
       devise_for :users, controllers: {
-        confirmations: "users/confirmations",
         omniauth_callbacks: "users/omniauth_callbacks",
-        passwords: "users/passwords",
         registrations: "users/registrations",
-        sessions: "users/sessions",
-        unlocks: "users/unlocks"
+        sessions: "users/sessions"
       }
 
-      mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
-      mount MissionControl::Jobs::Engine, at: "/jobs"
+      mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development? && defined?(LetterOpenerWeb)
+      mount MissionControl::Jobs::Engine, at: "/jobs" if Rails.env.development? && defined?(MissionControl::Jobs)
 
       get "up" => "rails/health#show", as: :rails_health_check
 
@@ -935,12 +1073,12 @@ def add_routes
   RUBY
 end
 
-# --- Part: 08_automation_scripts.rb ---
+# --- Part: 10_automation_scripts.rb ---
 def add_automation_scripts
   puts "\n==> 8. Preserving Automation Scripts & Procfile..."
 
   create_file "Procfile", <<~'PROCFILE', force: true
-    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000} -e $RAILS_ENV
+    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000}
     worker: ./bin/jobs
     release: ./bin/rails db:prepare
   PROCFILE
@@ -991,7 +1129,306 @@ def add_automation_scripts
   BASH
 end
 
-# --- Part: 09_main_execution.rb ---
+# --- Part: 11_readme.rb ---
+def add_readme
+  puts "\n==> 8b. Generating Ultra-Detailed README.md..."
+
+  create_file "README.md", <<~MARKDOWN, force: true
+    # 🚀 #{app_name.titleize}
+
+    > A modern, production-ready Ruby on Rails 8.1 application pre-configured with **Tailwind CSS**, **Devise & OmniAuth**, **Solid Stack**, **Figaro**, and full infrastructure tooling.
+
+    ---
+
+    ## 📋 Table of Contents
+
+    - [⚡ Quick Start](#-quick-start)
+    - [📦 Full Gem Ecosystem & Versions](#-complete-gem-ecosystem--versions)
+    - [🔐 Authentication & OAuth](#-authentication--security)
+    - [⚙️ Configurations & Environment Variables](#%EF%B8%8F-configurations--environment-variables)
+    - [🗄️ Database & Solid Stack](#%EF%B8%8F-database--solid-stack)
+    - [🎨 Frontend & UI System](#-frontend--ui-system)
+    - [🛠️ Controllers, Routes & Views](#%EF%B8%8F-controllers-routes--views)
+    - [☁️ Heroku Deployment & Scripts](#%EF%B8%8F-heroku-deployment--scripts)
+    - [🧪 Testing & Security Auditing](#-testing--security-auditing)
+
+    ---
+
+    ## ⚡ Quick Start
+
+    ### 1. Requirements
+
+    - **Ruby:** `4.0+` (specified in `.ruby-version`)
+    - **RVM Gemset:** `#{app_name}` (specified in `.ruby-gemset`)
+    - **SQLite3:** `2.1+`
+
+    ### 2. Setup Application
+
+    Clone the repository and run the setup script:
+
+    ```bash
+    bin/setup
+    ```
+
+    `bin/setup` will automatically:
+    - Install all Ruby gems via Bundler.
+    - Setup the database (`db/prepare`).
+    - Run pending database migrations.
+    - Compile initial Tailwind CSS builds.
+
+    ### 3. Start Development Server
+
+    Start the Rails server and live Tailwind watcher concurrently using Foreman:
+
+    ```bash
+    bin/dev
+    ```
+
+    Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+
+    ---
+
+    ## 📦 Complete Gem Ecosystem & Versions
+
+    ### 🧱 Core & Framework
+    - 💎 **`rails` (`~> 8.1.3`)** — Ruby on Rails 8.1 web framework.
+    - ⚡ **`puma` (`>= 5.0`)** — High-performance concurrent HTTP server.
+    - 📦 **`propshaft`** — Next-generation Rails asset pipeline.
+    - 🗄️ **`sqlite3` (`>= 2.1`)** — Lightweight embedded SQL engine.
+    - 📄 **`jbuilder`** — JSON builder DSL.
+
+    ### 🔐 Authentication & Security
+    - 🔑 **`devise` (`>= 5.0.4`)** — Flexible, modular authentication solution.
+    - 🌐 **`omniauth` (`>= 2.1.4`)** — Multi-provider authentication framework.
+    - 🛡️ **`omniauth-rails_csrf_protection` (`>= 2.0.1`)** — Mitigation against CSRF on OAuth endpoints.
+    - 🔍 **`omniauth-google-oauth2` (`>= 1.2.2`)** — Google OAuth2 strategy.
+    - 📘 **`omniauth-facebook` (`>= 11.0`)** — Facebook OAuth strategy.
+    - 🪟 **`omniauth-microsoft_graph` (`>= 2.2`)** — Microsoft Graph / Azure AD OAuth strategy.
+    - 🤖 **`recaptcha` (`>= 5.21.2`)** — Google reCAPTCHA v3 protection.
+    - 🌐 **`devise-i18n` (`>= 1.16`)** & **`rails-i18n` (`>= 8.1`)** — Multi-language support (default locale `:es`).
+
+    ### 🗃️ Solid Stack & Background Jobs
+    - 📥 **`solid_queue`** — Database-backed Active Job queue adapter.
+    - ⚡ **`solid_cache`** — Database-backed cache store.
+    - 🔌 **`solid_cable`** — Database-backed Action Cable WebSocket adapter.
+    - 🎛️ **`mission_control-jobs` (`>= 1.1`)** — Dashboard GUI for monitoring jobs (mounted at `/jobs`).
+
+    ### 🎨 Styling, Forms & UI
+    - 🎨 **`tailwindcss-rails` (`>= 4.6`)** — Tailwind CSS v4 build pipeline.
+    - 📝 **`simple_form` (`>= 5.4.1`)** & **`simple_form-tailwind` (`>= 0.2.0`)** — Form builder with Tailwind CSS wrappers.
+    - 📦 **`view_component` (`>= 4.12`)** — Reusable, testable view component framework.
+    - 📑 **`pagy` (`>= 43.6.1`)** — Ultra-fast, lightweight pagination.
+    - 💬 **`flash_rails_messages` (`>= 2.3`)** — Tailwind-styled flash message notifications.
+    - 🏷️ **`prefixed_ids` (`>= 1.8.1`)** — Obfuscated, typed model IDs (e.g., `usr_12345`).
+    - 📝 **`redcarpet` (`>= 3.6.1`)** — Fast Markdown processing.
+
+    ### 🌐 Services & External Storage
+    - 🔑 **`figaro` (`>= 1.3`)** — Secure application configuration via `config/application.yml`.
+    - 🌐 **`faraday` (`>= 2.14.3`)** — HTTP client for API integrations.
+    - ☁️ **`aws-sdk-s3` (`>= 1.228.1`)** & **`google-cloud-storage` (`>= 1.62`)** — Cloud storage providers for Active Storage.
+    - 🔴 **`redis` (`>= 5.4.1`)** & **`hiredis-client` (`>= 0.30.1`)** — High-performance Redis client.
+
+    ### 🛠️ Development & Debugging Tools
+    - 🚨 **`bullet` (`>= 8.1.3`)** — Detects N+1 queries and unused eager loading.
+    - ✉️ **`letter_opener_web` (`>= 3.0`)** — Web interface to inspect emails sent in development at `/letter_opener`.
+    - 📊 **`debugbar` (`>= 0.4.3`)** — Real-time performance inspector bar inserted into HTML pages.
+    - 🔄 **`hotwire-livereload` (`>= 2.1.1`)** — Automatically refreshes browser when view files are modified.
+    - 🖨️ **`amazing_print` (`>= 2.0`)** — Pretty printer for Ruby objects in console/logger.
+    - 🔍 **`pry` (`>= 0.16.0`)** — Powerful interactive console REPL.
+    - 🏭 **`factory_bot_rails` (`>= 6.5.1`)** — Fixture replacement for tests (`test/factories/`).
+    - 🚀 **`thruster`** — Proxy providing HTTP asset compression and caching for Puma.
+
+    ---
+
+    ## 🔐 Authentication & Security
+
+    ### User Model (`app/models/user.rb`)
+
+    The `User` model includes the following Devise modules:
+    - `:database_authenticatable`
+    - `:registerable`
+    - `:recoverable`
+    - `:rememberable`
+    - `:validatable`
+    - `:confirmable`
+    - `:lockable`
+    - `:trackable`
+    - `:omniauthable` (`:google_oauth2`, `:facebook`, `:microsoft_graph`)
+
+    ### OAuth Login Flow (`Users::OmniauthCallbacksController`)
+
+    Users can sign in via Google, Facebook, or Microsoft. Account mapping uses `User.from_omniauth_email(auth)`:
+
+    ```ruby
+    def self.from_omniauth_email(auth)
+      where(email: auth.info.email).first_or_initialize do |user|
+        user.password = Devise.friendly_token[0, 20]
+      end
+    end
+    ```
+
+    OAuth credentials and metadata are stored per-provider in the `users.omniauth_providers` JSON column, alongside the `provider` and `uid` database columns.
+
+    ### reCAPTCHA v3 Protection
+
+    Registration and Login forms automatically verify reCAPTCHA tokens before processing submissions:
+    - `Users::RegistrationsController#check_captcha` (`REGISTRATION` action)
+    - `Users::SessionsController#check_captcha` (`LOGIN` action)
+
+    ---
+
+    ## ⚙️ Configurations & Environment Variables
+
+    Environment configuration is managed through **Figaro** (`config/application.yml`).
+
+    > ⚠️ **Note:** `config/application.yml` contains sensitive API credentials and is listed in `.gitignore`.
+
+    ### Default Keys in `config/application.yml`
+
+    ```yaml
+    recaptcha_site_key: "dummy_site_key"
+    recaptcha_secret_key: "dummy_secret_key"
+    redis_url: "redis://localhost:6379/0"
+    prefixed_ids_salt: "default_salt_key_123"
+    google_client_id: "dummy_google_id"
+    google_client_secret: "dummy_google_secret"
+    facebook_app_id: "dummy_facebook_id"
+    facebook_app_secret: "dummy_facebook_secret"
+    azure_client_id: "dummy_azure_id"
+    azure_client_secret: "dummy_azure_secret"
+    heroku_app_name: "dummy_heroku_app_name"
+    heroku_api_token: "dummy_heroku_api_token"
+    mailer_sender: "no-reply@example.com"
+    aws_access_key_id: "dummy_aws_access_key_id"
+    aws_secret_access_key: "dummy_aws_secret_access_key"
+    aws_region: "us-east-1"
+    aws_bucket: "dummy_bucket"
+    gcs_project: "dummy_gcs_project"
+    gcs_credentials: "config/gcs.json"
+    gcs_bucket: "dummy_gcs_bucket"
+    ```
+
+    Access values anywhere in Ruby using `Figaro.env.<key_name>`:
+
+    ```ruby
+    site_key = Figaro.env.recaptcha_site_key
+    ```
+
+    ---
+
+    ## 🗄️ Database & Solid Stack
+
+    This application utilizes Rails 8's native **Solid Stack**:
+
+    1. **Solid Queue** — Job processing (`db/queue_schema.rb`)
+    2. **Solid Cache** — Database caching (`db/cache_schema.rb`)
+    3. **Solid Cable** — WebSockets over database (`db/cable_schema.rb`)
+
+    ### Mission Control Jobs Dashboard
+
+    Access the job management interface at:
+    - **Development URL:** [http://localhost:3000/jobs](http://localhost:3000/jobs)
+
+    ### Recurring Jobs Configuration (`config/recurring.yml`)
+
+    - `daily_execute_job`: Runs `DailyExecuteJob` every day at midnight.
+    - `heroku_auto_maintenance`: Automatically triggers `HerokuMaintenanceJob` at midnight in production.
+    - `clear_solid_queue_finished_jobs`: Cleans up completed queue records hourly.
+
+    ---
+
+    ## 🎨 Frontend & UI System
+
+    ### Tailwind CSS v4
+
+    Styles are configured in `app/assets/tailwind/application.css` and compiled via `rails tailwindcss:build`.
+
+    ### Simple Form Customization
+
+    Forms are configured in `config/initializers/simple_form_tailwind.rb` with custom slate/indigo styling and focus rings.
+
+    ### Flash Messages Helper
+
+    `render_flash_messages` renders clean, rounded Tailwind alert banners using `FlashRailsMessages::Base`:
+    - `notice` → Blue border & background
+    - `success` → Emerald border & background
+    - `alert` → Amber border & background
+    - `error` → Red border & background
+
+    ---
+
+    ## 🛠️ Controllers, Routes & Views
+
+    ### Routes Configuration (`config/routes.rb`)
+
+    ```ruby
+    Rails.application.routes.draw do
+      devise_for :users, controllers: {
+        omniauth_callbacks: "users/omniauth_callbacks",
+        registrations: "users/registrations",
+        sessions: "users/sessions"
+      }
+
+      mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development? && defined?(LetterOpenerWeb)
+      mount MissionControl::Jobs::Engine, at: "/jobs" if Rails.env.development? && defined?(MissionControl::Jobs)
+
+      get "up" => "rails/health#show", as: :rails_health_check
+      root "page#index"
+    end
+    ```
+
+    ### Key Controllers
+
+    - **`PageController#index`** — Authenticated root page (`app/views/page/index.html.erb`).
+    - **`Users::RegistrationsController`** — Custom Devise sign-up with reCAPTCHA verification.
+    - **`Users::SessionsController`** — Custom Devise login with reCAPTCHA verification.
+    - **`Users::OmniauthCallbacksController`** — Handles OAuth authentication for Google, Facebook, and Azure.
+
+    ---
+
+    ## ☁️ Heroku Deployment & Scripts
+
+    ### Procfile
+
+    ```procfile
+    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000}
+    worker: ./bin/jobs
+    release: ./bin/rails db:prepare
+    ```
+
+    ### Heroku Configuration Synchronization Script
+
+    To push all configuration keys from `config/application.yml` directly to your Heroku application:
+
+    ```bash
+    ./script/setup_heroku_env.sh my-heroku-app-name
+    ```
+
+    ---
+
+    ## 🧪 Testing & Security Auditing
+
+    Run the test suite and static security code checks:
+
+    ```bash
+    # Run Minitest suite
+    bin/rails test
+
+    # Security audits
+    bin/brakeman
+    bin/bundler-audit
+
+    # Code style checking
+    bin/rubocop
+    ```
+
+    ---
+
+    *Generated with Rails Core Template.*
+  MARKDOWN
+end
+
+# --- Part: 12_main_execution.rb ---
 # ==============================================================================
 # Main flow execution
 # ==============================================================================
@@ -1001,19 +1438,62 @@ add_configurations
 add_models_and_migrations
 add_controllers
 add_helpers_services_and_jobs
+add_locales
 add_views
+add_mailers
 add_routes
 add_automation_scripts
+add_readme
 
 after_bundle do
-  puts "\n==> Running default generators: Tailwind CSS, Simple Form Tailwind, Devise, Active Storage, Solid Stack..."
+  puts "\n==> Running default generators: Figaro, Tailwind CSS, Simple Form Tailwind, Devise, Action Text, Active Storage, Solid Stack..."
+  run "bundle exec figaro install"
+
+  append_to_file "config/application.yml" do
+    <<~YAML
+      recaptcha_site_key: "dummy_site_key"
+      recaptcha_secret_key: "dummy_secret_key"
+      redis_url: "redis://localhost:6379/0"
+      prefixed_ids_salt: "default_salt_key_123"
+      google_client_id: "dummy_google_id"
+      google_client_secret: "dummy_google_secret"
+      facebook_app_id: "dummy_facebook_id"
+      facebook_app_secret: "dummy_facebook_secret"
+      azure_client_id: "dummy_azure_id"
+      azure_client_secret: "dummy_azure_secret"
+      heroku_app_name: "dummy_heroku_app_name"
+      heroku_api_token: "dummy_heroku_api_token"
+      mailer_sender: "no-reply@example.com"
+      aws_access_key_id: "dummy_aws_access_key_id"
+      aws_secret_access_key: "dummy_aws_secret_access_key"
+      aws_region: "us-east-1"
+      aws_bucket: "dummy_bucket"
+      gcs_project: "dummy_gcs_project"
+      gcs_credentials: "config/gcs.json"
+      gcs_bucket: "dummy_gcs_bucket"
+    YAML
+  end
+
   rails_command "tailwindcss:install"
   generate "simple_form:tailwind:install"
   generate "devise:install"
+  rails_command "action_text:install"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"
   rails_command "solid_cache:install"
   rails_command "solid_cable:install"
+
+  if File.exist?("config/initializers/simple_form_tailwind.rb")
+    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-400 leading-6", "text-slate-800 leading-6"
+    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-600", "text-slate-600"
+    gsub_file "config/initializers/simple_form_tailwind.rb",
+              "config.button_class = 'my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold text-sm py-2 px-4 rounded'",
+              "config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm'"
+  end
+
+  gsub_file "config/environments/production.rb",
+            "config.active_storage.service = :local",
+            "config.active_storage.service = :amazon"
 
   puts "\n==> Customizing config/initializers/devise.rb with OmniAuth and Hotwire/Turbo..."
   inject_into_file "config/initializers/devise.rb", after: "Devise.setup do |config|\n" do
@@ -1036,9 +1516,10 @@ after_bundle do
     RUBY
   end
 
+  gsub_file "config/initializers/devise.rb", /config\.mailer_sender = .*/, 'config.mailer_sender = Figaro.env.mailer_sender || "no-reply@example.com"'
   gsub_file "config/initializers/devise.rb", /# config.sign_out_via = :delete/, "config.sign_out_via = :delete"
 
-  puts "\n==> Applying custom post-installation configurations for Solid Stack and Importmaps..."
+  puts "\n==> Applying custom post-installation configurations for Solid Stack..."
 
   create_file "config/recurring.yml", <<~'YAML', force: true
     default: &default
@@ -1062,20 +1543,6 @@ after_bundle do
         schedule: every hour at minute 12
 
   YAML
-
-  append_to_file "config/importmap.rb" do
-    <<~RUBY
-      pin "trix"
-      pin "@rails/actiontext", to: "actiontext.esm.js"
-    RUBY
-  end
-
-  append_to_file "app/javascript/application.js" do
-    <<~JS
-      import "trix"
-      import "@rails/actiontext"
-    JS
-  end
 
   rails_command "db:migrate"
   rails_command "runner \"load 'db/queue_schema.rb' if File.exist?('db/queue_schema.rb')\""

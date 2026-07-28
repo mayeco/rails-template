@@ -7,7 +7,9 @@ add_configurations
 add_models_and_migrations
 add_controllers
 add_helpers_services_and_jobs
+add_locales
 add_views
+add_mailers
 add_routes
 add_automation_scripts
 add_readme
