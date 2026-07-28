@@ -29,7 +29,7 @@ def add_gems
   gem 'faraday', '>= 2.14.3'
   gem 'prefixed_ids', '>= 1.8.1'
   gem 'flash_rails_messages', '>= 2.3'
-  gem 'pagy', '>= 43.6.1'
+  gem 'kaminari', '>= 1.2.2'
   gem 'view_component', '>= 4.12'
   gem 'recaptcha', '>= 5.21.2'
 

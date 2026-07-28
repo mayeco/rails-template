@@ -48,6 +48,7 @@ after_bundle do
 
   rails_command "tailwindcss:install"
   generate "devise:install"
+  generate "kaminari:config"
   rails_command "action_text:install"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"

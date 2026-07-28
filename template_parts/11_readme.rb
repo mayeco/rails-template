@@ -277,7 +277,7 @@ def add_readme
     - 🎨 **`tailwindcss-rails` (`>= 4.6`)** — Tailwind CSS v4 build pipeline.
     - 📝 **`simple_form` (`>= 5.4.1`)** & **`simple_form-tailwind` (`>= 0.2.0`)** — Form builder with Tailwind CSS wrappers.
     - 📦 **`view_component` (`>= 4.12`)** — Reusable, testable view component framework.
-    - 📑 **`pagy` (`>= 43.6.1`)** — Ultra-fast, lightweight pagination.
+    - 📑 **`kaminari` (`>= 1.2.2`)** — Flexible, customizable pagination.
     - 💬 **`flash_rails_messages` (`>= 2.3`)** — Tailwind-styled flash message notifications.
     - 🏷️ **`prefixed_ids` (`>= 1.8.1`)** — Obfuscated, typed model IDs (e.g., `usr_12345`).
     - 📝 **`redcarpet` (`>= 3.6.1`)** — Fast Markdown processing.

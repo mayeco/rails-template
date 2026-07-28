@@ -7,7 +7,7 @@ A modular, production-ready Rails application template generator designed to qui
 - **Modular Architecture**: Structured into 12 discrete, ordered template parts (`template_parts/*.rb`) and compiled into a single executable script via `build_template.sh`.
 - **Authentication & OAuth**: Pre-configured **Devise** with multi-provider **OmniAuth** (Google OAuth2, Facebook, Microsoft Graph), **reCAPTCHA v3** protection, and **PrefixedIds** (`usr_...`).
 - **Solid Stack & Queues**: **Solid Queue** (set as default `queue_adapter`), **Solid Cache**, and **Solid Cable** integration, complete with **Mission Control Jobs** dashboard mounted at `/jobs`.
-- **UI & Frontend**: **Tailwind CSS v4** (`tailwindcss-rails`), **SimpleForm** with custom Tailwind wrappers, **ViewComponent**, **Pagy** pagination, **Bootstrap Icons**, and Tailwind-styled **Flash Messages**.
+- **UI & Frontend**: **Tailwind CSS v4** (`tailwindcss-rails`), **SimpleForm** with custom Tailwind wrappers, **ViewComponent**, **Kaminari** pagination, **Bootstrap Icons**, and Tailwind-styled **Flash Messages**.
 - **Internationalization (i18n)**: Default Spanish locale (`:es`) with complete bilingual dictionary files (`es.yml` and `en.yml`) and `devise-i18n`.
 - **Configuration & Security**: Automated **Figaro** configuration (`config/application.yml` git-ignored by default with example file `config/application.yml.example`), and working baseline **Content Security Policy (CSP)**.
 - **Rich Content & Uploads**: Pre-installed **ActionText** and **Active Storage** configured for S3 (`aws-sdk-s3`) and Google Cloud Storage (`google-cloud-storage`).
