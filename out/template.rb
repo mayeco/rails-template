@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 21:34:00 -04 2026
+# Built at: Mon Jul 27 21:37:15 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -64,6 +64,8 @@ def add_configurations
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }", env: "development"
+  environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
+  environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
 
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "production"
