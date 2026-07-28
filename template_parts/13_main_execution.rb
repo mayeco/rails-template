@@ -55,6 +55,15 @@ after_bundle do
   rails_command "solid_cache:install"
   rails_command "solid_cable:install"
 
+  if File.exist?("config/puma.rb") && File.read("config/puma.rb").include?("plugin :solid_queue")
+    gsub_file "config/puma.rb",
+              /plugin :solid_queue.*/,
+              "# You can either set the env var, or check for development\nplugin :solid_queue if ENV[\"SOLID_QUEUE_IN_PUMA\"] || Rails.env.development?"
+  elsif File.exist?("config/puma.rb")
+    append_to_file "config/puma.rb",
+                   "\n# You can either set the env var, or check for development\nplugin :solid_queue if ENV[\"SOLID_QUEUE_IN_PUMA\"] || Rails.env.development?\n"
+  end
+
   gsub_file "config/environments/production.rb",
             "config.active_storage.service = :local",
             "config.active_storage.service = :amazon"
