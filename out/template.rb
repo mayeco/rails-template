@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 23:46:28 -04 2026
+# Built at: Mon Jul 27 23:54:36 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -768,7 +768,7 @@ def add_views
       <link rel="apple-touch-icon" href="/icon.png">
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-      <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+      <%= stylesheet_link_tag "application", "data-turbo-track": Rails.env.production? ? "reload" : "" %>
 
       <%= debugbar_head if defined? Debugbar %>
     </head>
