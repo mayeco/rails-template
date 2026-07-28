@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/out/template.rb"
 
 echo "==> Creating test Rails application in ${TEST_APP_DIR}..."
-rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" --skip-git --skip-kamal
+rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" "$@"
 
 # 3. Verify Rails application execution
 echo "==> Verifying generated Rails application..."
@@ -47,7 +47,16 @@ for file in "${REQUIRED_FILES[@]}"; do
 done
 
 # Execute rails runner to verify environment loads and executes correctly
-bin/rails runner "puts '==> Rails environment loaded successfully!'"
+bin/rails runner "
+  puts '==> Verifying Rails models and schema...'
+  User.count
+  ActiveStorage::Blob.count
+  ActionText::RichText.count
+  SolidQueue::Job.count
+  SolidCache::Entry.count
+  SolidCable::Message.count
+  puts '==> All models and database tables verified successfully!'
+"
 
 echo "========================================================="
 echo " Test Rails application successfully created and verified!"

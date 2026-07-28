@@ -99,25 +99,4 @@ def add_controllers
       end
     end
   RUBY
-
-  create_file "app/controllers/users/confirmations_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::ConfirmationsController < Devise::ConfirmationsController
-    end
-  RUBY
-
-  create_file "app/controllers/users/passwords_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::PasswordsController < Devise::PasswordsController
-    end
-  RUBY
-
-  create_file "app/controllers/users/unlocks_controller.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    class Users::UnlocksController < Devise::UnlocksController
-    end
-  RUBY
 end

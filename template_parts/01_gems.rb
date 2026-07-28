@@ -18,7 +18,6 @@ def add_gems
   gem 'devise-i18n', '>= 1.16'
 
   # Utilities & UI
-  gem 'amazing_print', '>= 2.0'
   gem 'aws-sdk-s3', '>= 1.228.1', require: false
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
@@ -32,9 +31,9 @@ def add_gems
   gem 'pagy', '>= 43.6.1'
   gem 'view_component', '>= 4.12'
   gem 'recaptcha', '>= 5.21.2'
-  gem 'htmlcompressor', '>= 0.4.0'
 
   gem_group :development do
+    gem 'amazing_print', '>= 2.0'
     gem 'bullet', '>= 8.1.3'
     gem 'letter_opener_web', '>= 3.0'
     gem 'pry', '>= 0.16.0'

@@ -351,7 +351,7 @@ def add_views
         <div class="mt-3 flex gap-2">
           <%- resource_class.omniauth_providers.each do |provider| %>
             <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "flex-1 inline-flex justify-center items-center gap-2 py-2 px-3 border border-slate-300 rounded-lg shadow-sm bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2", form_class: "flex-1" do %>
-              <i class="bi bi-<%= omniauth_icon(provider) %> text-base"></i>
+              <i class="bi bi-<%= provider.to_s.split('_').first %> text-base"></i>
               <span class="capitalize"><%= provider.to_s.split('_').first %></span>
             <% end %>
           <% end %>
@@ -376,6 +376,30 @@ def add_views
         </ul>
       </div>
     <% end %>
+  ERB
+
+  create_file "app/views/layouts/mailer.html.erb", <<~'ERB', force: true
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; }
+          .footer { margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; }
+          a { color: #4f46e5; text-decoration: none; font-weight: 500; }
+        </style>
+      </head>
+
+      <body>
+        <div class="container">
+          <%= yield %>
+        </div>
+        <div class="footer">
+          <p>&copy; <%= Time.current.year %> <%= Rails.application.class.module_parent_name.titleize %>. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
   ERB
 
   create_file "app/views/devise/mailer/confirmation_instructions.html.erb", <<~'ERB', force: true

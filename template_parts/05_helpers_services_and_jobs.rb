@@ -3,23 +3,6 @@ def add_helpers_services_and_jobs
 
   create_file "app/helpers/application_helper.rb", <<~'RUBY', force: true
     module ApplicationHelper
-      def omniauth_icon(provider)
-        case provider
-        when :google_oauth2
-          "google"
-        when :facebook
-          "facebook"
-        when :microsoft_graph
-          "microsoft"
-        else
-          provider
-        end
-      end
-    end
-  RUBY
-
-  create_file "app/helpers/page_helper.rb", <<~'RUBY', force: true
-    module PageHelper
     end
   RUBY
 
@@ -48,18 +31,19 @@ def add_helpers_services_and_jobs
           req.body = { maintenance: maintenance_enabled }.to_json
         end
 
-        if response.success?
-          Rails.logger.info "Maintenance mode #{maintenance_enabled ? 'enabled' : 'disabled'} for #{app_name}"
-          true
-        else
+        unless response.success?
           Rails.logger.error "Failed to #{maintenance_enabled ? 'enable' : 'disable'} maintenance mode: #{response.body}"
-          false
+          return false
         end
 
-        if maintenance_enabled && response.success?
+        Rails.logger.info "Maintenance mode #{maintenance_enabled ? 'enabled' : 'disabled'} for #{app_name}"
+
+        if maintenance_enabled
           scale_dynos(dyno_type: "web")
           scale_dynos(dyno_type: "worker")
         end
+
+        true
       rescue Faraday::Error => e
         Rails.logger.error "Heroku API error: #{e.message}"
         false
@@ -111,6 +95,8 @@ def add_helpers_services_and_jobs
       queue_as :default
 
       def perform(*args)
+        return if Figaro.env.heroku_api_token.to_s.start_with?("dummy") || Figaro.env.heroku_api_token.blank?
+
         if HerokuMaintenanceService.new.enable_maintenance_mode
           Rails.logger.info "Heroku maintenance mode enabled successfully."
         else

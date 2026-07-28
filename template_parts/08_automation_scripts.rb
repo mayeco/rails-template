@@ -2,7 +2,7 @@ def add_automation_scripts
   puts "\n==> 8. Preserving Automation Scripts & Procfile..."
 
   create_file "Procfile", <<~'PROCFILE', force: true
-    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000} -e $RAILS_ENV
+    web: ./bin/thrust ./bin/rails server -p ${PORT:-3000}
     worker: ./bin/jobs
     release: ./bin/rails db:prepare
   PROCFILE
