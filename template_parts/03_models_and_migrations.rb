@@ -9,6 +9,9 @@ def add_models_and_migrations
 
   create_file "app/models/user.rb", <<~'RUBY', force: true
     class User < ApplicationRecord
+      include PrefixedIds
+      has_prefix_id :usr
+
       devise :database_authenticatable, :registerable,
              :recoverable, :rememberable, :validatable,
              :confirmable, :lockable, :trackable, :omniauthable,

@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Mon Jul 27 20:53:34 -04 2026
+# Built at: Mon Jul 27 21:34:00 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -31,7 +31,6 @@ def add_gems
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
   gem 'simple_form', '>= 5.4.1'
-  gem 'simple_form-tailwind', '>= 0.2.0'
   gem 'redcarpet', '>= 3.6.1'
   gem 'figaro', '>= 1.3'
   gem 'faraday', '>= 2.14.3'
@@ -73,6 +72,29 @@ def add_configurations
 
   append_to_file ".gitignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".gitignore")
 
+  create_file "config/application.yml.example", <<~'YAML', force: true
+    recaptcha_site_key: "dummy_site_key"
+    recaptcha_secret_key: "dummy_secret_key"
+    redis_url: "redis://localhost:6379/0"
+    prefixed_ids_salt: "default_salt_key_123"
+    google_client_id: "dummy_google_id"
+    google_client_secret: "dummy_google_secret"
+    facebook_app_id: "dummy_facebook_id"
+    facebook_app_secret: "dummy_facebook_secret"
+    azure_client_id: "dummy_azure_id"
+    azure_client_secret: "dummy_azure_secret"
+    heroku_app_name: "dummy_heroku_app_name"
+    heroku_api_token: "dummy_heroku_api_token"
+    mailer_sender: "no-reply@example.com"
+    aws_access_key_id: "dummy_aws_access_key_id"
+    aws_secret_access_key: "dummy_aws_secret_access_key"
+    aws_region: "us-east-1"
+    aws_bucket: "dummy_bucket"
+    gcs_project: "dummy_gcs_project"
+    gcs_credentials: "config/gcs.json"
+    gcs_bucket: "dummy_gcs_bucket"
+  YAML
+
   create_file "config/storage.yml", <<~'YAML', force: true
     test:
       service: Disk
@@ -108,10 +130,134 @@ def add_configurations
     end
   RUBY
 
+  create_file "test/models/user_test.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    require "test_helper"
+
+    class UserTest < ActiveSupport::TestCase
+      test "valid user from factory" do
+        user = FactoryBot.build(:user)
+        assert user.valid?
+      end
+    end
+  RUBY
+
+  create_file "config/initializers/content_security_policy.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    Rails.application.configure do
+      config.content_security_policy do |policy|
+        policy.default_src :self, :https
+        policy.font_src    :self, :https, :data, "https://cdn.jsdelivr.net"
+        policy.img_src     :self, :https, :data
+        policy.object_src  :none
+        policy.script_src  :self, :https, :unsafe_inline, "https://www.google.com", "https://www.gstatic.com", "https://www.recaptcha.net", "https://recaptcha.net", "https://cdn.jsdelivr.net"
+        policy.style_src   :self, :https, :unsafe_inline, "https://cdn.jsdelivr.net"
+        policy.frame_src   :self, "https://www.google.com", "https://www.recaptcha.net", "https://recaptcha.net"
+        policy.connect_src :self, :https, "ws:", "wss:", "http://localhost:*", "ws://localhost:*"
+      end
+    end
+  RUBY
+
   create_file "config/initializers/simple_form.rb", <<~'RUBY', force: true
     # frozen_string_literal: true
 
     SimpleForm.setup do |config|
+    end
+  RUBY
+
+  create_file "config/initializers/simple_form_tailwind.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    SimpleForm.setup do |config|
+      config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm transition'
+      config.boolean_label_class = ''
+      config.label_text = ->(label, required, _explicit_label) { "#{label} #{required}" }
+      config.boolean_style = :inline
+      config.item_wrapper_tag = :div
+      config.include_default_input_wrapper_class = false
+      config.error_notification_class = 'p-4 mb-4 text-sm rounded-xl font-medium shadow-sm bg-red-50 text-red-800 border border-red-200'
+      config.error_method = :to_sentence
+      config.input_field_error_class = 'border-red-500'
+      config.input_field_valid_class = 'border-emerald-500'
+      config.label_class = 'text-sm font-medium text-slate-700'
+
+      config.wrappers :vertical_form, tag: 'div', class: 'mb-4' do |b|
+        b.use :html5
+        b.use :placeholder
+        b.optional :maxlength
+        b.optional :minlength
+        b.optional :pattern
+        b.optional :min_max
+        b.optional :readonly
+        b.use :label, class: 'block text-sm font-medium text-slate-700 mb-1', error_class: 'text-red-500'
+        b.use :input,
+              class: 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800 leading-6 transition duration-150 ease-in-out', error_class: 'border-red-500', valid_class: 'border-emerald-500'
+        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
+        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+      end
+
+      config.wrappers :vertical_boolean, tag: 'div', class: 'mb-4 flex items-start', error_class: '' do |b|
+        b.use :html5
+        b.optional :readonly
+        b.wrapper tag: 'div', class: 'flex items-center h-5' do |ba|
+          ba.use :input,
+                 class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded'
+        end
+        b.wrapper tag: 'div', class: 'ml-3 text-sm' do |bb|
+          bb.use :label, class: 'block text-sm font-medium text-slate-700', error_class: 'text-red-500'
+          bb.use :hint, wrap_with: { tag: 'p', class: 'block text-xs text-slate-500' }
+          bb.use :full_error, wrap_with: { tag: 'p', class: 'block text-xs text-red-600' }
+        end
+      end
+
+      config.wrappers :vertical_collection, item_wrapper_class: 'flex items-center',
+                                            item_label_class: 'my-1 ml-3 block text-sm font-medium text-slate-700', tag: 'div', class: 'my-4' do |b|
+        b.use :html5
+        b.optional :readonly
+        b.wrapper :legend_tag, tag: 'legend', class: 'text-sm font-medium text-slate-700 mb-1',
+                               error_class: 'text-red-500' do |ba|
+          ba.use :label_text
+        end
+        b.use :input,
+              class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded', error_class: 'text-red-500', valid_class: 'text-emerald-500'
+        b.use :full_error, wrap_with: { tag: 'p', class: 'block mt-1 text-xs text-red-600' }
+        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+      end
+
+      config.wrappers :vertical_file, tag: 'div', class: 'mb-4' do |b|
+        b.use :html5
+        b.use :placeholder
+        b.optional :maxlength
+        b.optional :minlength
+        b.optional :readonly
+        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
+        b.use :input, class: 'w-full text-slate-700 px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm', error_class: 'text-red-500 border-red-500',
+                      valid_class: 'text-emerald-500'
+        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
+        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+      end
+
+      config.wrappers :vertical_select, tag: 'div', class: 'my-4', error_class: 'f', valid_class: '' do |b|
+        b.use :html5
+        b.optional :readonly
+        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
+        b.use :input, class: 'mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800', error_class: 'text-red-500', valid_class: 'text-emerald-500'
+        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
+        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+      end
+
+      config.default_wrapper = :vertical_form
+
+      config.wrapper_mappings = {
+        boolean: :vertical_boolean,
+        check_boxes: :vertical_collection,
+        collection: :vertical_collection,
+        file: :vertical_file,
+        radio_buttons: :vertical_collection,
+        select: :vertical_select
+      }
     end
   RUBY
 
@@ -181,6 +327,9 @@ def add_models_and_migrations
 
   create_file "app/models/user.rb", <<~'RUBY', force: true
     class User < ApplicationRecord
+      include PrefixedIds
+      has_prefix_id :usr
+
       devise :database_authenticatable, :registerable,
              :recoverable, :rememberable, :validatable,
              :confirmable, :lockable, :trackable, :omniauthable,
@@ -644,7 +793,7 @@ def add_views
           </div>
         <% end %>
       </main>
-      <%= debugbar_body if defined? Debugbar %>
+      <%= debugbar_body cable: {url: "ws://localhost:3000"} if defined? Debugbar %>
     </body>
     </html>
   ERB
@@ -1475,21 +1624,12 @@ after_bundle do
   end
 
   rails_command "tailwindcss:install"
-  generate "simple_form:tailwind:install"
   generate "devise:install"
   rails_command "action_text:install"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"
   rails_command "solid_cache:install"
   rails_command "solid_cable:install"
-
-  if File.exist?("config/initializers/simple_form_tailwind.rb")
-    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-400 leading-6", "text-slate-800 leading-6"
-    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-600", "text-slate-600"
-    gsub_file "config/initializers/simple_form_tailwind.rb",
-              "config.button_class = 'my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold text-sm py-2 px-4 rounded'",
-              "config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm'"
-  end
 
   gsub_file "config/environments/production.rb",
             "config.active_storage.service = :local",
@@ -1518,6 +1658,17 @@ after_bundle do
 
   gsub_file "config/initializers/devise.rb", /config\.mailer_sender = .*/, 'config.mailer_sender = Figaro.env.mailer_sender || "no-reply@example.com"'
   gsub_file "config/initializers/devise.rb", /# config.sign_out_via = :delete/, "config.sign_out_via = :delete"
+
+  if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
+    inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
+      <<~RUBY
+        unless File.exist?("config/application.yml")
+          puts "\\n== Copying config/application.yml.example to config/application.yml =="
+          FileUtils.cp("config/application.yml.example", "config/application.yml")
+        end
+      RUBY
+    end
+  end
 
   puts "\n==> Applying custom post-installation configurations for Solid Stack..."
 

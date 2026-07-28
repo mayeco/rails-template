@@ -37,7 +37,7 @@ def add_views
           </div>
         <% end %>
       </main>
-      <%= debugbar_body if defined? Debugbar %>
+      <%= debugbar_body cable: {url: "ws://localhost:3000"} if defined? Debugbar %>
     </body>
     </html>
   ERB

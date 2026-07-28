@@ -22,7 +22,6 @@ def add_gems
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
   gem 'simple_form', '>= 5.4.1'
-  gem 'simple_form-tailwind', '>= 0.2.0'
   gem 'redcarpet', '>= 3.6.1'
   gem 'figaro', '>= 1.3'
   gem 'faraday', '>= 2.14.3'

@@ -44,21 +44,12 @@ after_bundle do
   end
 
   rails_command "tailwindcss:install"
-  generate "simple_form:tailwind:install"
   generate "devise:install"
   rails_command "action_text:install"
   rails_command "active_storage:install"
   rails_command "solid_queue:install"
   rails_command "solid_cache:install"
   rails_command "solid_cable:install"
-
-  if File.exist?("config/initializers/simple_form_tailwind.rb")
-    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-400 leading-6", "text-slate-800 leading-6"
-    gsub_file "config/initializers/simple_form_tailwind.rb", "text-gray-600", "text-slate-600"
-    gsub_file "config/initializers/simple_form_tailwind.rb",
-              "config.button_class = 'my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold text-sm py-2 px-4 rounded'",
-              "config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm'"
-  end
 
   gsub_file "config/environments/production.rb",
             "config.active_storage.service = :local",
@@ -87,6 +78,17 @@ after_bundle do
 
   gsub_file "config/initializers/devise.rb", /config\.mailer_sender = .*/, 'config.mailer_sender = Figaro.env.mailer_sender || "no-reply@example.com"'
   gsub_file "config/initializers/devise.rb", /# config.sign_out_via = :delete/, "config.sign_out_via = :delete"
+
+  if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
+    inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
+      <<~RUBY
+        unless File.exist?("config/application.yml")
+          puts "\\n== Copying config/application.yml.example to config/application.yml =="
+          FileUtils.cp("config/application.yml.example", "config/application.yml")
+        end
+      RUBY
+    end
+  end
 
   puts "\n==> Applying custom post-installation configurations for Solid Stack..."
 
