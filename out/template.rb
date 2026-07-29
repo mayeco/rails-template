@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Tue Jul 28 12:30:45 -04 2026
+# Built at: Wed Jul 29 13:34:48 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -33,7 +33,6 @@ def add_gems
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
   gem 'simple_form', '>= 5.4.1'
-  gem 'redcarpet', '>= 3.6.1'
   gem 'figaro', '>= 1.3'
   gem 'faraday', '>= 2.14.3'
   gem 'prefixed_ids', '>= 1.8.1'
@@ -46,9 +45,10 @@ def add_gems
     gem 'amazing_print', '>= 2.0'
     gem 'bullet', '>= 8.1.3'
     gem 'letter_opener_web', '>= 3.0'
-    gem 'pry', '>= 0.16.0'
     gem 'hotwire-livereload', '>= 2.1.1'
     gem 'debugbar', '>= 0.4.3'
+    gem 'better_errors', '>= 2.10.1'
+    gem 'binding_of_caller', '>= 2.0'
   end
 
   gem_group :development, :test do
@@ -60,13 +60,15 @@ end
 def add_configurations
   puts "\n==> 2. Configuring Environments and Base Initializers..."
 
-  environment "config.i18n.default_locale = Figaro.env.app_main_locale!.to_sym"
-  environment "config.time_zone = Figaro.env.app_main_timezone!"
-  environment "config.active_job.queue_adapter = :solid_queue"
+  environment 'config.i18n.default_locale = (Figaro.env.app_main_locale || "es").to_sym'
+  environment 'config.time_zone = Figaro.env.app_main_timezone || "America/Santiago"'
+  environment "config.active_job.queue_adapter = :solid_queue", env: "development"
+  environment "config.active_job.queue_adapter = :solid_queue", env: "production"
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }", env: "development"
+  environment "config.action_mailer.default_url_options = { host: 'www.change-me.com', protocol: 'https' }", env: "production"
   environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
@@ -74,6 +76,7 @@ def add_configurations
   create_file ".ruby-gemset", "#{app_name}\n", force: true
 
   append_to_file ".gitignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".gitignore")
+  append_to_file ".dockerignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".dockerignore")
 
   create_file "config/application.yml.example", <<~'YAML', force: true
     app_main_locale: "es"
@@ -272,6 +275,7 @@ def add_configurations
     Recaptcha.configure do |config|
       config.site_key = Figaro.env.recaptcha_site_key
       config.secret_key = Figaro.env.recaptcha_secret_key
+      config.skip_verify_env = %w[test cucumber development]
     end
   RUBY
 
@@ -340,14 +344,14 @@ def add_models_and_migrations
              :confirmable, :lockable, :trackable, :omniauthable,
              omniauth_providers: [:google_oauth2, :facebook, :microsoft_graph]
 
-      def self.from_omniauth(auth)
-        raise if auth.provider.blank? || auth.uid.blank?
-
-        where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-          user.email = auth.info.email
-          user.password = Devise.friendly_token[0, 20]
-        end
-      end
+      # def self.from_omniauth(auth)
+      #   raise if auth.provider.blank? || auth.uid.blank?
+      #
+      #   where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
+      #     user.email = auth.info.email
+      #     user.password = Devise.friendly_token[0, 20]
+      #   end
+      # end
 
       def self.from_omniauth_email(auth)
         raise if auth.info.email.blank?

@@ -1,13 +1,15 @@
 def add_configurations
   puts "\n==> 2. Configuring Environments and Base Initializers..."
 
-  environment "config.i18n.default_locale = Figaro.env.app_main_locale!.to_sym"
-  environment "config.time_zone = Figaro.env.app_main_timezone!"
-  environment "config.active_job.queue_adapter = :solid_queue"
+  environment 'config.i18n.default_locale = (Figaro.env.app_main_locale || "es").to_sym'
+  environment 'config.time_zone = Figaro.env.app_main_timezone || "America/Santiago"'
+  environment "config.active_job.queue_adapter = :solid_queue", env: "development"
+  environment "config.active_job.queue_adapter = :solid_queue", env: "production"
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }", env: "development"
+  environment "config.action_mailer.default_url_options = { host: 'www.change-me.com', protocol: 'https' }", env: "production"
   environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
@@ -15,6 +17,7 @@ def add_configurations
   create_file ".ruby-gemset", "#{app_name}\n", force: true
 
   append_to_file ".gitignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".gitignore")
+  append_to_file ".dockerignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".dockerignore")
 
   create_file "config/application.yml.example", <<~'YAML', force: true
     app_main_locale: "es"
@@ -213,6 +216,7 @@ def add_configurations
     Recaptcha.configure do |config|
       config.site_key = Figaro.env.recaptcha_site_key
       config.secret_key = Figaro.env.recaptcha_secret_key
+      config.skip_verify_env = %w[test cucumber development]
     end
   RUBY
 

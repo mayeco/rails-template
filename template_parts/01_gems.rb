@@ -24,7 +24,6 @@ def add_gems
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
   gem 'simple_form', '>= 5.4.1'
-  gem 'redcarpet', '>= 3.6.1'
   gem 'figaro', '>= 1.3'
   gem 'faraday', '>= 2.14.3'
   gem 'prefixed_ids', '>= 1.8.1'
@@ -37,9 +36,10 @@ def add_gems
     gem 'amazing_print', '>= 2.0'
     gem 'bullet', '>= 8.1.3'
     gem 'letter_opener_web', '>= 3.0'
-    gem 'pry', '>= 0.16.0'
     gem 'hotwire-livereload', '>= 2.1.1'
     gem 'debugbar', '>= 0.4.3'
+    gem 'better_errors', '>= 2.10.1'
+    gem 'binding_of_caller', '>= 2.0'
   end
 
   gem_group :development, :test do

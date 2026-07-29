@@ -22,4 +22,6 @@ for part in template_parts/*.rb; do
   fi
 done
 
+ruby -c "$OUT_FILE" > /dev/null || { echo "Error: Syntax error in $OUT_FILE"; exit 1; }
+
 echo "==> Template successfully compiled to $OUT_FILE"
