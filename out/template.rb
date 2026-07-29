@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Wed Jul 29 14:16:58 -04 2026
+# Built at: Wed Jul 29 15:49:05 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -415,7 +415,7 @@ def add_models_and_migrations
         add_index :users, :reset_password_token, unique: true
         add_index :users, :confirmation_token,   unique: true
         add_index :users, :unlock_token,         unique: true
-        add_index :users, [:provider, :uid],     unique: true
+        add_index :users, [ :provider, :uid ],     unique: true
       end
     end
   RUBY
@@ -1363,7 +1363,7 @@ def add_readme
 
     This is a production-ready **Ruby on Rails 8.1** web application built with:
     - **Ruby:** 4.0+
-    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons (Note: Tailwind CSS v4 requires modern browsers, Safari 16.4+, Chrome 111+, Firefox 128+, aligned with `allow_browser versions: :modern`)
+    - **Frontend:** Tailwind CSS v4, DaisyUI v5, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons (Note: Tailwind CSS v4 requires modern browsers, Safari 16.4+, Chrome 111+, Firefox 128+, aligned with `allow_browser versions: :modern`)
     - **Authentication:** Devise + OmniAuth (Google, Facebook, Microsoft Graph) + reCAPTCHA v3
     - **Background Jobs & Caching:** Solid Stack (`solid_queue`, `solid_cache`, `solid_cable`) + Mission Control Jobs (`/jobs`)
     - **Configuration:** Figaro (`config/application.yml` / `Figaro.env.*`)
@@ -2221,6 +2221,33 @@ after_bundle do
   end
 
   rails_command "tailwindcss:install"
+  if File.exist?("app/views/layouts/application.html.erb")
+    gsub_file "app/views/layouts/application.html.erb",
+              /^\s*<%= stylesheet_link_tag "application".* %>\n?/,
+              ""
+  end
+
+  puts "\n==> Installing DaisyUI v5 for Tailwind CSS v4..."
+  run "curl -sLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs"
+  run "curl -sLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs"
+
+  if File.exist?("app/assets/tailwind/application.css")
+    append_to_file "app/assets/tailwind/application.css" do
+      <<~CSS
+
+        @source not "./daisyui{,*}.mjs";
+
+        @plugin "./daisyui.mjs";
+
+        /* Optional for custom themes – Docs: https://daisyui.com/docs/themes/#how-to-add-a-new-custom-theme */
+        @plugin "./daisyui-theme.mjs" {
+          /* custom theme here */
+        }
+      CSS
+    end
+  end
+
+  rails_command "tailwindcss:build"
   generate "devise:install"
   generate "kaminari:config"
   rails_command "action_text:install"

@@ -51,6 +51,33 @@ after_bundle do
   end
 
   rails_command "tailwindcss:install"
+  if File.exist?("app/views/layouts/application.html.erb")
+    gsub_file "app/views/layouts/application.html.erb",
+              /^\s*<%= stylesheet_link_tag "application".* %>\n?/,
+              ""
+  end
+
+  puts "\n==> Installing DaisyUI v5 for Tailwind CSS v4..."
+  run "curl -sLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs"
+  run "curl -sLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs"
+
+  if File.exist?("app/assets/tailwind/application.css")
+    append_to_file "app/assets/tailwind/application.css" do
+      <<~CSS
+
+        @source not "./daisyui{,*}.mjs";
+
+        @plugin "./daisyui.mjs";
+
+        /* Optional for custom themes – Docs: https://daisyui.com/docs/themes/#how-to-add-a-new-custom-theme */
+        @plugin "./daisyui-theme.mjs" {
+          /* custom theme here */
+        }
+      CSS
+    end
+  end
+
+  rails_command "tailwindcss:build"
   generate "devise:install"
   generate "kaminari:config"
   rails_command "action_text:install"
