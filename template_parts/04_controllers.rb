@@ -30,6 +30,12 @@ def add_controllers
     class Users::RegistrationsController < Devise::RegistrationsController
       prepend_before_action :check_captcha, only: [:create]
 
+      protected
+
+      def after_inactive_sign_up_path_for(resource)
+        new_user_session_path
+      end
+
       def check_captcha
         return if verify_recaptcha(action: "REGISTRATION")
 

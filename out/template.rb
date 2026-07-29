@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Wed Jul 29 13:55:21 -04 2026
+# Built at: Wed Jul 29 14:16:58 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -453,6 +453,12 @@ def add_controllers
 
     class Users::RegistrationsController < Devise::RegistrationsController
       prepend_before_action :check_captcha, only: [:create]
+
+      protected
+
+      def after_inactive_sign_up_path_for(resource)
+        new_user_session_path
+      end
 
       def check_captcha
         return if verify_recaptcha(action: "REGISTRATION")
