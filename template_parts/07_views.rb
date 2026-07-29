@@ -114,7 +114,7 @@ def add_views
 
             <%= f.input :password,
                         required: true,
-                        hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                        hint: (t(".minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :password_confirmation,
@@ -153,7 +153,7 @@ def add_views
             <% end %>
 
             <%= f.input :password,
-                        hint: "leave blank if you don't want to change it",
+                        hint: t(".leave_blank_if_unchanged"),
                         required: false,
                         input_html: { autocomplete: "new-password" } %>
 
@@ -162,7 +162,7 @@ def add_views
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :current_password,
-                        hint: "we need your current password to confirm your changes",
+                        hint: t(".need_current_password"),
                         required: true,
                         input_html: { autocomplete: "current-password" } %>
           </div>
@@ -179,7 +179,7 @@ def add_views
               <h3 class="text-sm font-semibold text-red-900"><%= t(".cancel_account") %></h3>
               <p class="text-xs text-red-600 mt-0.5"><%= t(".permanently_delete_account") %></p>
             </div>
-            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
+            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: t(".are_you_sure"), turbo_confirm: t(".are_you_sure") }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
           </div>
         </div>
       </div>
@@ -230,14 +230,14 @@ def add_views
 
           <div class="space-y-4">
             <%= f.input :password,
-                        label: "New password",
+                        label: t(".new_password"),
                         required: true,
                         autofocus: true,
-                        hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                        hint: (t("devise.registrations.new.minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :password_confirmation,
-                        label: "Confirm new password",
+                        label: t(".confirm_new_password"),
                         required: true,
                         input_html: { autocomplete: "new-password" } %>
           </div>

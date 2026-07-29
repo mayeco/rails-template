@@ -26,38 +26,38 @@ def add_mailers
   ERB
 
   create_file "app/views/devise/mailer/confirmation_instructions.html.erb", <<~'ERB', force: true
-    <p>Welcome <%= @email %>!</p>
-    <p>You can confirm your account email through the link below:</p>
-    <p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+    <p><%= t("devise.mailer.confirmation_instructions.welcome", email: @email) %></p>
+    <p><%= t("devise.mailer.confirmation_instructions.confirm_account_text") %></p>
+    <p><%= link_to t("devise.mailer.confirmation_instructions.confirm_account_link"), confirmation_url(@resource, confirmation_token: @token) %></p>
   ERB
 
   create_file "app/views/devise/mailer/email_changed.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @email %>!</p>
+    <p><%= t("devise.mailer.email_changed.hello", email: @email) %></p>
 
     <% if @resource.try(:unconfirmed_email?) %>
-      <p>We're contacting you to notify you that your email is being changed to <%= @resource.unconfirmed_email %>.</p>
+      <p><%= t("devise.mailer.email_changed.changing_email", email: @resource.unconfirmed_email) %></p>
     <% else %>
-      <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
+      <p><%= t("devise.mailer.email_changed.changed_email", email: @resource.email) %></p>
     <% end %>
   ERB
 
   create_file "app/views/devise/mailer/password_change.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>We're contacting you to notify you that your password has been changed.</p>
+    <p><%= t("devise.mailer.password_change.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.password_change.changed_password") %></p>
   ERB
 
   create_file "app/views/devise/mailer/reset_password_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Someone has requested a link to change your password. You can do this through the link below.</p>
-    <p><%= link_to 'Change my password', edit_password_url(@resource, reset_password_token: @token) %></p>
-    <p>If you didn't request this, please ignore this email.</p>
-    <p>Your password won't change until you access the link above and create a new one.</p>
+    <p><%= t("devise.mailer.reset_password_instructions.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.request_text") %></p>
+    <p><%= link_to t("devise.mailer.reset_password_instructions.change_password_link"), edit_password_url(@resource, reset_password_token: @token) %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.ignore_text") %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.notice_text") %></p>
   ERB
 
   create_file "app/views/devise/mailer/unlock_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
-    <p>Click the link below to unlock your account:</p>
-    <p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
+    <p><%= t("devise.mailer.unlock_instructions.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.unlock_instructions.locked_text") %></p>
+    <p><%= t("devise.mailer.unlock_instructions.unlock_text") %></p>
+    <p><%= link_to t("devise.mailer.unlock_instructions.unlock_link"), unlock_url(@resource, unlock_token: @token) %></p>
   ERB
 end

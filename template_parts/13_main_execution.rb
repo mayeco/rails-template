@@ -2,6 +2,10 @@
 # Main flow execution
 # ==============================================================================
 
+unless Rails::VERSION::STRING >= "8.1.0"
+  raise "rails-core error: template requires Rails 8.1.0 or higher (detected #{Rails::VERSION::STRING})"
+end
+
 add_gems
 add_configurations
 add_models_and_migrations
@@ -20,13 +24,13 @@ after_bundle do
   run "bundle exec figaro install"
 
   append_to_file "config/application.yml" do
-    <<~'YAML'
+    <<~YAML
       app_main_locale: "es"
       app_main_timezone: "America/Santiago"
       recaptcha_site_key: "dummy_site_key"
       recaptcha_secret_key: "dummy_secret_key"
       redis_url: "redis://localhost:6379/0"
-      prefixed_ids_salt: "default_salt_key_123"
+      prefixed_ids_salt: "#{SecureRandom.hex(32)}"
       google_client_id: "dummy_google_id"
       google_client_secret: "dummy_google_secret"
       facebook_app_id: "dummy_facebook_id"
@@ -68,24 +72,26 @@ after_bundle do
             "config.active_storage.service = :local",
             "config.active_storage.service = :amazon"
 
+  unless File.read("config/environments/production.rb").include?("config.active_storage.service = :amazon")
+    raise "rails-core error: failed to configure Active Storage service in config/environments/production.rb"
+  end
+
   puts "\n==> Customizing config/initializers/devise.rb with OmniAuth and Hotwire/Turbo..."
   inject_into_file "config/initializers/devise.rb", after: "Devise.setup do |config|\n" do
     <<~'RUBY'
-      config.responder.error_status = :unprocessable_entity
-      config.responder.redirect_status = :see_other
+        config.omniauth :google_oauth2, Figaro.env.google_client_id, Figaro.env.google_client_secret, {
+          scope: "email"
+        }
 
-      config.omniauth :google_oauth2, Figaro.env.google_client_id, Figaro.env.google_client_secret, {
-        scope: "email"
-      }
+        config.omniauth :facebook, Figaro.env.facebook_app_id, Figaro.env.facebook_app_secret, {
+          scope: "email"
+        }
 
-      config.omniauth :facebook, Figaro.env.facebook_app_id, Figaro.env.facebook_app_secret, {
-        scope: "email"
-      }
+        config.omniauth :microsoft_graph, Figaro.env.azure_client_id, Figaro.env.azure_client_secret, {
+          scope: "openid email User.Read",
+          skip_domain_verification: true
+        }
 
-      config.omniauth :microsoft_graph, Figaro.env.azure_client_id, Figaro.env.azure_client_secret, {
-        scope: "openid email User.Read",
-        skip_domain_verification: true
-      }
     RUBY
   end
 
@@ -95,10 +101,10 @@ after_bundle do
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
       <<~'RUBY'
-        unless File.exist?("config/application.yml")
-          puts "\\n== Copying config/application.yml.example to config/application.yml =="
-          FileUtils.cp("config/application.yml.example", "config/application.yml")
-        end
+          unless File.exist?("config/application.yml")
+            puts "\n== Copying config/application.yml.example to config/application.yml =="
+            FileUtils.cp("config/application.yml.example", "config/application.yml")
+          end
       RUBY
     end
   end
@@ -128,7 +134,7 @@ after_bundle do
 
   YAML
 
-  rails_command "db:migrate"
+  rails_command "db:prepare"
   rails_command "runner \"load 'db/queue_schema.rb' if File.exist?('db/queue_schema.rb')\""
   rails_command "runner \"load 'db/cache_schema.rb' if File.exist?('db/cache_schema.rb')\""
   rails_command "runner \"load 'db/cable_schema.rb' if File.exist?('db/cable_schema.rb')\""

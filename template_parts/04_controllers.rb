@@ -61,15 +61,20 @@ def add_controllers
       before_action :initialize_user_from_auth_email, except: [:failure]
 
       def initialize_user_from_auth_email
-        @user = User.from_omniauth_email(auth_hash)
-        @user.confirm unless @user.confirmed?
+        if auth_hash.blank? || auth_hash.info&.email.blank?
+          return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
+        end
 
+        @user = User.from_omniauth_email(auth_hash)
+        return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
+
+        @user.confirm unless @user.confirmed?
         user_omniauth_providers
 
         if @user.persisted?
-          sign_in_and_redirect @user
+          sign_in_and_redirect @user, event: :authentication
         else
-          raise "Users::OmniauthCallbacksController: User not persisted"
+          redirect_to new_user_registration_path, alert: @user.errors.full_messages.to_sentence
         end
       end
 

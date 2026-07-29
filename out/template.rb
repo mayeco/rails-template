@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Wed Jul 29 13:34:48 -04 2026
+# Built at: Wed Jul 29 13:55:21 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -354,7 +354,7 @@ def add_models_and_migrations
       # end
 
       def self.from_omniauth_email(auth)
-        raise if auth.info.email.blank?
+        return nil if auth.blank? || auth.info&.email.blank?
 
         where(email: auth.info.email).first_or_initialize do |user|
           user.password = Devise.friendly_token[0, 20]
@@ -485,15 +485,20 @@ def add_controllers
       before_action :initialize_user_from_auth_email, except: [:failure]
 
       def initialize_user_from_auth_email
-        @user = User.from_omniauth_email(auth_hash)
-        @user.confirm unless @user.confirmed?
+        if auth_hash.blank? || auth_hash.info&.email.blank?
+          return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
+        end
 
+        @user = User.from_omniauth_email(auth_hash)
+        return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
+
+        @user.confirm unless @user.confirmed?
         user_omniauth_providers
 
         if @user.persisted?
-          sign_in_and_redirect @user
+          sign_in_and_redirect @user, event: :authentication
         else
-          raise "Users::OmniauthCallbacksController: User not persisted"
+          redirect_to new_user_registration_path, alert: @user.errors.full_messages.to_sentence
         end
       end
 
@@ -649,10 +654,14 @@ def add_locales
             create_account: "Crear una cuenta"
             sign_up_to_get_started: "Regístrate para comenzar"
             sign_up: "Registrarse"
+            minimum_password_length: "%{count} caracteres mínimo"
           edit:
             edit_account: "Editar Cuenta"
             update_profile_settings: "Actualiza la configuración de tu perfil y contraseña"
             currently_waiting_confirmation_for: "Esperando confirmación para: %{email}"
+            leave_blank_if_unchanged: "déjalo en blanco si no quieres cambiarlo"
+            need_current_password: "necesitamos tu contraseña actual para confirmar los cambios"
+            are_you_sure: "¿Estás seguro?"
             back: "Volver"
             update_profile: "Actualizar Perfil"
             cancel_account: "Cancelar mi cuenta"
@@ -666,6 +675,8 @@ def add_locales
           edit:
             change_password: "Cambiar contraseña"
             set_new_password: "Establece una nueva contraseña para tu cuenta"
+            new_password: "Nueva contraseña"
+            confirm_new_password: "Confirmar nueva contraseña"
             change_my_password: "Cambiar mi contraseña"
         confirmations:
           new:
@@ -688,6 +699,29 @@ def add_locales
             didnt_receive_unlock_instructions: "¿No recibiste las instrucciones de desbloqueo?"
             or_log_in_with: "o inicia sesión con"
             or_create_account_with: "o crea tu cuenta con"
+        mailer:
+          confirmation_instructions:
+            welcome: "¡Bienvenido %{email}!"
+            confirm_account_text: "Puedes confirmar el correo de tu cuenta a través del siguiente enlace:"
+            confirm_account_link: "Confirmar mi cuenta"
+          email_changed:
+            hello: "¡Hola %{email}!"
+            changing_email: "Te contactamos para notificarte que tu correo está siendo cambiado a %{email}."
+            changed_email: "Te contactamos para notificarte que tu correo ha sido cambiado a %{email}."
+          password_change:
+            hello: "¡Hola %{email}!"
+            changed_password: "Te contactamos para notificarte que tu contraseña ha sido cambiada."
+          reset_password_instructions:
+            hello: "¡Hola %{email}!"
+            request_text: "Alguien ha solicitado un enlace para cambiar tu contraseña. Puedes hacerlo a través del enlace de abajo."
+            change_password_link: "Cambiar mi contraseña"
+            ignore_text: "Si no solicitaste esto, por favor ignora este correo."
+            notice_text: "Tu contraseña no cambiará hasta que accedas al enlace y crees una nueva."
+          unlock_instructions:
+            hello: "¡Hola %{email}!"
+            locked_text: "Tu cuenta ha sido bloqueada debido a un número excesivo de intentos fallidos de inicio de sesión."
+            unlock_text: "Haz clic en el enlace de abajo para desbloquear tu cuenta:"
+            unlock_link: "Desbloquear mi cuenta"
   YAML
 
   create_file "config/locales/en.yml", <<~'YAML', force: true
@@ -710,10 +744,14 @@ def add_locales
             create_account: "Create an account"
             sign_up_to_get_started: "Sign up to get started"
             sign_up: "Sign up"
+            minimum_password_length: "%{count} characters minimum"
           edit:
             edit_account: "Edit Account"
             update_profile_settings: "Update your profile settings and password"
             currently_waiting_confirmation_for: "Currently waiting confirmation for: %{email}"
+            leave_blank_if_unchanged: "leave blank if you don't want to change it"
+            need_current_password: "we need your current password to confirm your changes"
+            are_you_sure: "Are you sure?"
             back: "Back"
             update_profile: "Update Profile"
             cancel_account: "Cancel my account"
@@ -727,6 +765,8 @@ def add_locales
           edit:
             change_password: "Change password"
             set_new_password: "Set a new password for your account"
+            new_password: "New password"
+            confirm_new_password: "Confirm new password"
             change_my_password: "Change my password"
         confirmations:
           new:
@@ -749,6 +789,29 @@ def add_locales
             didnt_receive_unlock_instructions: "Didn't receive unlock instructions?"
             or_log_in_with: "or log in with"
             or_create_account_with: "or create account with"
+        mailer:
+          confirmation_instructions:
+            welcome: "Welcome %{email}!"
+            confirm_account_text: "You can confirm your account email through the link below:"
+            confirm_account_link: "Confirm my account"
+          email_changed:
+            hello: "Hello %{email}!"
+            changing_email: "We're contacting you to notify you that your email is being changed to %{email}."
+            changed_email: "We're contacting you to notify you that your email has been changed to %{email}."
+          password_change:
+            hello: "Hello %{email}!"
+            changed_password: "We're contacting you to notify you that your password has been changed."
+          reset_password_instructions:
+            hello: "Hello %{email}!"
+            request_text: "Someone has requested a link to change your password. You can do this through the link below."
+            change_password_link: "Change my password"
+            ignore_text: "If you didn't request this, please ignore this email."
+            notice_text: "Your password won't change until you access the link above and create a new one."
+          unlock_instructions:
+            hello: "Hello %{email}!"
+            locked_text: "Your account has been locked due to an excessive number of unsuccessful sign in attempts."
+            unlock_text: "Click the link below to unlock your account:"
+            unlock_link: "Unlock my account"
   YAML
 end
 
@@ -869,7 +932,7 @@ def add_views
 
             <%= f.input :password,
                         required: true,
-                        hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                        hint: (t(".minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :password_confirmation,
@@ -908,7 +971,7 @@ def add_views
             <% end %>
 
             <%= f.input :password,
-                        hint: "leave blank if you don't want to change it",
+                        hint: t(".leave_blank_if_unchanged"),
                         required: false,
                         input_html: { autocomplete: "new-password" } %>
 
@@ -917,7 +980,7 @@ def add_views
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :current_password,
-                        hint: "we need your current password to confirm your changes",
+                        hint: t(".need_current_password"),
                         required: true,
                         input_html: { autocomplete: "current-password" } %>
           </div>
@@ -934,7 +997,7 @@ def add_views
               <h3 class="text-sm font-semibold text-red-900"><%= t(".cancel_account") %></h3>
               <p class="text-xs text-red-600 mt-0.5"><%= t(".permanently_delete_account") %></p>
             </div>
-            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
+            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: t(".are_you_sure"), turbo_confirm: t(".are_you_sure") }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
           </div>
         </div>
       </div>
@@ -985,14 +1048,14 @@ def add_views
 
           <div class="space-y-4">
             <%= f.input :password,
-                        label: "New password",
+                        label: t(".new_password"),
                         required: true,
                         autofocus: true,
-                        hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                        hint: (t("devise.registrations.new.minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
                         input_html: { autocomplete: "new-password" } %>
 
             <%= f.input :password_confirmation,
-                        label: "Confirm new password",
+                        label: t(".confirm_new_password"),
                         required: true,
                         input_html: { autocomplete: "new-password" } %>
           </div>
@@ -1163,39 +1226,39 @@ def add_mailers
   ERB
 
   create_file "app/views/devise/mailer/confirmation_instructions.html.erb", <<~'ERB', force: true
-    <p>Welcome <%= @email %>!</p>
-    <p>You can confirm your account email through the link below:</p>
-    <p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+    <p><%= t("devise.mailer.confirmation_instructions.welcome", email: @email) %></p>
+    <p><%= t("devise.mailer.confirmation_instructions.confirm_account_text") %></p>
+    <p><%= link_to t("devise.mailer.confirmation_instructions.confirm_account_link"), confirmation_url(@resource, confirmation_token: @token) %></p>
   ERB
 
   create_file "app/views/devise/mailer/email_changed.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @email %>!</p>
+    <p><%= t("devise.mailer.email_changed.hello", email: @email) %></p>
 
     <% if @resource.try(:unconfirmed_email?) %>
-      <p>We're contacting you to notify you that your email is being changed to <%= @resource.unconfirmed_email %>.</p>
+      <p><%= t("devise.mailer.email_changed.changing_email", email: @resource.unconfirmed_email) %></p>
     <% else %>
-      <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
+      <p><%= t("devise.mailer.email_changed.changed_email", email: @resource.email) %></p>
     <% end %>
   ERB
 
   create_file "app/views/devise/mailer/password_change.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>We're contacting you to notify you that your password has been changed.</p>
+    <p><%= t("devise.mailer.password_change.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.password_change.changed_password") %></p>
   ERB
 
   create_file "app/views/devise/mailer/reset_password_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Someone has requested a link to change your password. You can do this through the link below.</p>
-    <p><%= link_to 'Change my password', edit_password_url(@resource, reset_password_token: @token) %></p>
-    <p>If you didn't request this, please ignore this email.</p>
-    <p>Your password won't change until you access the link above and create a new one.</p>
+    <p><%= t("devise.mailer.reset_password_instructions.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.request_text") %></p>
+    <p><%= link_to t("devise.mailer.reset_password_instructions.change_password_link"), edit_password_url(@resource, reset_password_token: @token) %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.ignore_text") %></p>
+    <p><%= t("devise.mailer.reset_password_instructions.notice_text") %></p>
   ERB
 
   create_file "app/views/devise/mailer/unlock_instructions.html.erb", <<~'ERB', force: true
-    <p>Hello <%= @resource.email %>!</p>
-    <p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
-    <p>Click the link below to unlock your account:</p>
-    <p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
+    <p><%= t("devise.mailer.unlock_instructions.hello", email: @resource.email) %></p>
+    <p><%= t("devise.mailer.unlock_instructions.locked_text") %></p>
+    <p><%= t("devise.mailer.unlock_instructions.unlock_text") %></p>
+    <p><%= link_to t("devise.mailer.unlock_instructions.unlock_link"), unlock_url(@resource, unlock_token: @token) %></p>
   ERB
 end
 
@@ -1233,45 +1296,47 @@ def add_automation_scripts
 
   create_file "script/setup_heroku_env.sh", <<~'BASH', force: true
     #!/bin/bash
+    set -euo pipefail
 
-    # Script to set Heroku environment variables from application.yml
-    # Usage: ./setup_heroku_env.sh [heroku_app_name]
+    # Script to set Heroku environment variables from application.yml in a single batch
+    # Usage: ./setup_heroku_env.sh <heroku_app_name>
 
-    heroku labs:enable runtime-dyno-metadata
-
-    if [ -z "$1" ]; then
-      APP_ARGUMENT=""
-    else
-      APP_ARGUMENT="--app $1"
+    if [ -z "${1:-}" ]; then
+      echo "Usage: $0 <heroku_app_name>"
+      exit 1
     fi
 
-    # Make sure application.yml exists
+    APP_NAME="$1"
+
     if [ ! -f config/application.yml ]; then
       echo "Error: config/application.yml file not found."
       exit 1
     fi
 
-    echo "Setting up Heroku environment variables from application.yml..."
+    echo "Setting up Heroku environment variables from application.yml for ${APP_NAME}..."
 
-    # Read application.yml and convert to Heroku config:set commands
-    while IFS=':' read -r key value || [[ -n "$key" ]]; do
-      # Skip empty lines and comments
-      if [[ -z "$key" || "$key" == \#* ]]; then
-        continue
-      fi
-      
-      # Trim whitespace from key and value
-      key=$(echo "$key" | xargs)
-      value=$(echo "$value" | xargs)
-      
-      # Skip if key or value is empty
-      if [[ -z "$key" || -z "$value" ]]; then
-        continue
-      fi
-      
-      echo "Setting $key..."
-      heroku config:set "$key=$value" $APP_ARGUMENT
-    done < config/application.yml
+    mapfile -t PAIRS < <(ruby -e '
+      require "yaml"
+      begin
+        config = YAML.load_file("config/application.yml") || {}
+        config.each do |key, value|
+          next if value.nil? || value.to_s.strip.empty?
+          puts "#{key}=#{value}"
+        end
+      rescue => e
+        STDERR.puts "Error reading application.yml: #{e.message}"
+        exit 1
+      end
+    ')
+
+    if [ ${#PAIRS[@]} -eq 0 ]; then
+      echo "No environment variables found in config/application.yml"
+      exit 0
+    fi
+
+    echo "Setting ${#PAIRS[@]} environment variables on Heroku..."
+    heroku config:set "${PAIRS[@]}" --app "$APP_NAME"
+    heroku labs:enable runtime-dyno-metadata --app "$APP_NAME" || true
 
     echo "Finished setting up Heroku environment variables."
   BASH
@@ -1292,7 +1357,7 @@ def add_readme
 
     This is a production-ready **Ruby on Rails 8.1** web application built with:
     - **Ruby:** 4.0+
-    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons
+    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons (Note: Tailwind CSS v4 requires modern browsers, Safari 16.4+, Chrome 111+, Firefox 128+, aligned with `allow_browser versions: :modern`)
     - **Authentication:** Devise + OmniAuth (Google, Facebook, Microsoft Graph) + reCAPTCHA v3
     - **Background Jobs & Caching:** Solid Stack (`solid_queue`, `solid_cache`, `solid_cable`) + Mission Control Jobs (`/jobs`)
     - **Configuration:** Figaro (`config/application.yml` / `Figaro.env.*`)
@@ -2101,6 +2166,10 @@ end
 # Main flow execution
 # ==============================================================================
 
+unless Rails::VERSION::STRING >= "8.1.0"
+  raise "rails-core error: template requires Rails 8.1.0 or higher (detected #{Rails::VERSION::STRING})"
+end
+
 add_gems
 add_configurations
 add_models_and_migrations
@@ -2119,13 +2188,13 @@ after_bundle do
   run "bundle exec figaro install"
 
   append_to_file "config/application.yml" do
-    <<~'YAML'
+    <<~YAML
       app_main_locale: "es"
       app_main_timezone: "America/Santiago"
       recaptcha_site_key: "dummy_site_key"
       recaptcha_secret_key: "dummy_secret_key"
       redis_url: "redis://localhost:6379/0"
-      prefixed_ids_salt: "default_salt_key_123"
+      prefixed_ids_salt: "#{SecureRandom.hex(32)}"
       google_client_id: "dummy_google_id"
       google_client_secret: "dummy_google_secret"
       facebook_app_id: "dummy_facebook_id"
@@ -2167,24 +2236,26 @@ after_bundle do
             "config.active_storage.service = :local",
             "config.active_storage.service = :amazon"
 
+  unless File.read("config/environments/production.rb").include?("config.active_storage.service = :amazon")
+    raise "rails-core error: failed to configure Active Storage service in config/environments/production.rb"
+  end
+
   puts "\n==> Customizing config/initializers/devise.rb with OmniAuth and Hotwire/Turbo..."
   inject_into_file "config/initializers/devise.rb", after: "Devise.setup do |config|\n" do
     <<~'RUBY'
-      config.responder.error_status = :unprocessable_entity
-      config.responder.redirect_status = :see_other
+        config.omniauth :google_oauth2, Figaro.env.google_client_id, Figaro.env.google_client_secret, {
+          scope: "email"
+        }
 
-      config.omniauth :google_oauth2, Figaro.env.google_client_id, Figaro.env.google_client_secret, {
-        scope: "email"
-      }
+        config.omniauth :facebook, Figaro.env.facebook_app_id, Figaro.env.facebook_app_secret, {
+          scope: "email"
+        }
 
-      config.omniauth :facebook, Figaro.env.facebook_app_id, Figaro.env.facebook_app_secret, {
-        scope: "email"
-      }
+        config.omniauth :microsoft_graph, Figaro.env.azure_client_id, Figaro.env.azure_client_secret, {
+          scope: "openid email User.Read",
+          skip_domain_verification: true
+        }
 
-      config.omniauth :microsoft_graph, Figaro.env.azure_client_id, Figaro.env.azure_client_secret, {
-        scope: "openid email User.Read",
-        skip_domain_verification: true
-      }
     RUBY
   end
 
@@ -2194,10 +2265,10 @@ after_bundle do
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
       <<~'RUBY'
-        unless File.exist?("config/application.yml")
-          puts "\\n== Copying config/application.yml.example to config/application.yml =="
-          FileUtils.cp("config/application.yml.example", "config/application.yml")
-        end
+          unless File.exist?("config/application.yml")
+            puts "\n== Copying config/application.yml.example to config/application.yml =="
+            FileUtils.cp("config/application.yml.example", "config/application.yml")
+          end
       RUBY
     end
   end
@@ -2227,7 +2298,7 @@ after_bundle do
 
   YAML
 
-  rails_command "db:migrate"
+  rails_command "db:prepare"
   rails_command "runner \"load 'db/queue_schema.rb' if File.exist?('db/queue_schema.rb')\""
   rails_command "runner \"load 'db/cache_schema.rb' if File.exist?('db/cache_schema.rb')\""
   rails_command "runner \"load 'db/cable_schema.rb' if File.exist?('db/cable_schema.rb')\""

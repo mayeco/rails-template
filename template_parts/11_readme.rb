@@ -12,7 +12,7 @@ def add_readme
 
     This is a production-ready **Ruby on Rails 8.1** web application built with:
     - **Ruby:** 4.0+
-    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons
+    - **Frontend:** Tailwind CSS v4, Importmaps, Hotwire (Turbo + Stimulus), SimpleForm, Bootstrap Icons (Note: Tailwind CSS v4 requires modern browsers, Safari 16.4+, Chrome 111+, Firefox 128+, aligned with `allow_browser versions: :modern`)
     - **Authentication:** Devise + OmniAuth (Google, Facebook, Microsoft Graph) + reCAPTCHA v3
     - **Background Jobs & Caching:** Solid Stack (`solid_queue`, `solid_cache`, `solid_cable`) + Mission Control Jobs (`/jobs`)
     - **Configuration:** Figaro (`config/application.yml` / `Figaro.env.*`)

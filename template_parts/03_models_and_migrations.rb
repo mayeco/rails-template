@@ -27,7 +27,7 @@ def add_models_and_migrations
       # end
 
       def self.from_omniauth_email(auth)
-        raise if auth.info.email.blank?
+        return nil if auth.blank? || auth.info&.email.blank?
 
         where(email: auth.info.email).first_or_initialize do |user|
           user.password = Devise.friendly_token[0, 20]

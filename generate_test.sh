@@ -5,7 +5,18 @@ set -e
 echo "==> Building template..."
 ./build_template.sh
 
-# 2. Prepare tmp directory
+# 2. Parse arguments and prepare tmp directory
+CLEANUP=false
+RAILS_ARGS=()
+
+for arg in "$@"; do
+  if [ "$arg" == "--cleanup" ]; then
+    CLEANUP=true
+  else
+    RAILS_ARGS+=("$arg")
+  fi
+done
+
 mkdir -p tmp
 APP_NAME="test_app_$(date +%s)"
 TEST_APP_DIR="tmp/${APP_NAME}"
@@ -14,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/out/template.rb"
 
 echo "==> Creating test Rails application in ${TEST_APP_DIR}..."
-rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" "$@"
+rails new "$TEST_APP_DIR" -m "$TEMPLATE_PATH" "${RAILS_ARGS[@]}"
 
 # 3. Verify Rails application execution
 echo "==> Verifying generated Rails application..."
@@ -30,12 +41,15 @@ cd "$TEST_APP_DIR"
 REQUIRED_FILES=(
   "config/initializers/devise.rb"
   "app/models/user.rb"
+  "app/controllers/users/registrations_controller.rb"
+  "app/controllers/users/sessions_controller.rb"
+  "app/controllers/users/omniauth_callbacks_controller.rb"
   "config/routes.rb"
   "config/recurring.yml"
-  "config/queue.yml"
-  "config/cache.yml"
   "Procfile"
   "script/setup_heroku_env.sh"
+  "config/application.yml.example"
+  "AGENTS.md"
   ".ruby-gemset"
 )
 
@@ -60,5 +74,11 @@ bin/rails runner "
 
 echo "========================================================="
 echo " Test Rails application successfully created and verified!"
-echo " Preserved at: ${TEST_APP_DIR}"
+if [ "$CLEANUP" = true ]; then
+  cd "$SCRIPT_DIR"
+  rm -rf "$TEST_APP_DIR"
+  echo " Cleaned up test application directory: ${TEST_APP_DIR}"
+else
+  echo " Preserved at: ${TEST_APP_DIR}"
+fi
 echo "========================================================="

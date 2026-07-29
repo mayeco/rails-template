@@ -9,45 +9,47 @@ def add_automation_scripts
 
   create_file "script/setup_heroku_env.sh", <<~'BASH', force: true
     #!/bin/bash
+    set -euo pipefail
 
-    # Script to set Heroku environment variables from application.yml
-    # Usage: ./setup_heroku_env.sh [heroku_app_name]
+    # Script to set Heroku environment variables from application.yml in a single batch
+    # Usage: ./setup_heroku_env.sh <heroku_app_name>
 
-    heroku labs:enable runtime-dyno-metadata
-
-    if [ -z "$1" ]; then
-      APP_ARGUMENT=""
-    else
-      APP_ARGUMENT="--app $1"
+    if [ -z "${1:-}" ]; then
+      echo "Usage: $0 <heroku_app_name>"
+      exit 1
     fi
 
-    # Make sure application.yml exists
+    APP_NAME="$1"
+
     if [ ! -f config/application.yml ]; then
       echo "Error: config/application.yml file not found."
       exit 1
     fi
 
-    echo "Setting up Heroku environment variables from application.yml..."
+    echo "Setting up Heroku environment variables from application.yml for ${APP_NAME}..."
 
-    # Read application.yml and convert to Heroku config:set commands
-    while IFS=':' read -r key value || [[ -n "$key" ]]; do
-      # Skip empty lines and comments
-      if [[ -z "$key" || "$key" == \#* ]]; then
-        continue
-      fi
-      
-      # Trim whitespace from key and value
-      key=$(echo "$key" | xargs)
-      value=$(echo "$value" | xargs)
-      
-      # Skip if key or value is empty
-      if [[ -z "$key" || -z "$value" ]]; then
-        continue
-      fi
-      
-      echo "Setting $key..."
-      heroku config:set "$key=$value" $APP_ARGUMENT
-    done < config/application.yml
+    mapfile -t PAIRS < <(ruby -e '
+      require "yaml"
+      begin
+        config = YAML.load_file("config/application.yml") || {}
+        config.each do |key, value|
+          next if value.nil? || value.to_s.strip.empty?
+          puts "#{key}=#{value}"
+        end
+      rescue => e
+        STDERR.puts "Error reading application.yml: #{e.message}"
+        exit 1
+      end
+    ')
+
+    if [ ${#PAIRS[@]} -eq 0 ]; then
+      echo "No environment variables found in config/application.yml"
+      exit 0
+    fi
+
+    echo "Setting ${#PAIRS[@]} environment variables on Heroku..."
+    heroku config:set "${PAIRS[@]}" --app "$APP_NAME"
+    heroku labs:enable runtime-dyno-metadata --app "$APP_NAME" || true
 
     echo "Finished setting up Heroku environment variables."
   BASH
