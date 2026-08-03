@@ -3,7 +3,7 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Wed Jul 29 15:49:05 -04 2026
+# Built at: Sat Aug  1 00:07:48 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -179,19 +179,19 @@ def add_configurations
     # frozen_string_literal: true
 
     SimpleForm.setup do |config|
-      config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm transition'
-      config.boolean_label_class = ''
+      config.button_class = "btn btn-primary my-2"
+      config.boolean_label_class = ""
       config.label_text = ->(label, required, _explicit_label) { "#{label} #{required}" }
       config.boolean_style = :inline
       config.item_wrapper_tag = :div
       config.include_default_input_wrapper_class = false
-      config.error_notification_class = 'p-4 mb-4 text-sm rounded-xl font-medium shadow-sm bg-red-50 text-red-800 border border-red-200'
+      config.error_notification_class = "alert alert-error mb-4"
       config.error_method = :to_sentence
-      config.input_field_error_class = 'border-red-500'
-      config.input_field_valid_class = 'border-emerald-500'
-      config.label_class = 'text-sm font-medium text-slate-700'
+      config.input_field_error_class = "input-error"
+      config.input_field_valid_class = "input-success"
+      config.label_class = "label-text font-medium text-base-content/80"
 
-      config.wrappers :vertical_form, tag: 'div', class: 'mb-4' do |b|
+      config.wrappers :vertical_form, tag: "div", class: "form-control w-full mb-4" do |b|
         b.use :html5
         b.use :placeholder
         b.optional :maxlength
@@ -199,61 +199,57 @@ def add_configurations
         b.optional :pattern
         b.optional :min_max
         b.optional :readonly
-        b.use :label, class: 'block text-sm font-medium text-slate-700 mb-1', error_class: 'text-red-500'
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
         b.use :input,
-              class: 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800 leading-6 transition duration-150 ease-in-out', error_class: 'border-red-500', valid_class: 'border-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+              class: "input input-bordered w-full", error_class: "input-error", valid_class: "input-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_boolean, tag: 'div', class: 'mb-4 flex items-start', error_class: '' do |b|
+      config.wrappers :vertical_boolean, tag: "div", class: "form-control mb-4" do |b|
         b.use :html5
         b.optional :readonly
-        b.wrapper tag: 'div', class: 'flex items-center h-5' do |ba|
-          ba.use :input,
-                 class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded'
+        b.wrapper tag: "label", class: "label cursor-pointer justify-start gap-3 py-1" do |ba|
+          ba.use :input, class: "checkbox checkbox-primary"
+          ba.use :label, class: "label-text font-medium text-base-content/80 cursor-pointer", error_class: "text-error"
         end
-        b.wrapper tag: 'div', class: 'ml-3 text-sm' do |bb|
-          bb.use :label, class: 'block text-sm font-medium text-slate-700', error_class: 'text-red-500'
-          bb.use :hint, wrap_with: { tag: 'p', class: 'block text-xs text-slate-500' }
-          bb.use :full_error, wrap_with: { tag: 'p', class: 'block text-xs text-red-600' }
-        end
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_collection, item_wrapper_class: 'flex items-center',
-                                            item_label_class: 'my-1 ml-3 block text-sm font-medium text-slate-700', tag: 'div', class: 'my-4' do |b|
+      config.wrappers :vertical_collection, item_wrapper_class: "flex items-center gap-2",
+                                            item_label_class: "my-1 text-sm font-medium text-base-content/80", tag: "div", class: "my-4" do |b|
         b.use :html5
         b.optional :readonly
-        b.wrapper :legend_tag, tag: 'legend', class: 'text-sm font-medium text-slate-700 mb-1',
-                               error_class: 'text-red-500' do |ba|
+        b.wrapper :legend_tag, tag: "legend", class: "text-sm font-medium text-base-content/80 mb-1",
+                               error_class: "text-error" do |ba|
           ba.use :label_text
         end
         b.use :input,
-              class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded', error_class: 'text-red-500', valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'block mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+              class: "checkbox checkbox-primary", error_class: "checkbox-error", valid_class: "checkbox-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "block mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_file, tag: 'div', class: 'mb-4' do |b|
+      config.wrappers :vertical_file, tag: "div", class: "form-control w-full mb-4" do |b|
         b.use :html5
         b.use :placeholder
         b.optional :maxlength
         b.optional :minlength
         b.optional :readonly
-        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
-        b.use :input, class: 'w-full text-slate-700 px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm', error_class: 'text-red-500 border-red-500',
-                      valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
+        b.use :input, class: "file-input file-input-bordered w-full", error_class: "file-input-error", valid_class: "file-input-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_select, tag: 'div', class: 'my-4', error_class: 'f', valid_class: '' do |b|
+      config.wrappers :vertical_select, tag: "div", class: "form-control w-full my-4", error_class: "", valid_class: "" do |b|
         b.use :html5
         b.optional :readonly
-        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
-        b.use :input, class: 'mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800', error_class: 'text-red-500', valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
+        b.use :input, class: "select select-bordered w-full", error_class: "select-error", valid_class: "select-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
       config.default_wrapper = :vertical_form
@@ -308,15 +304,15 @@ def add_configurations
         private
 
         def default_alert_classes
-          "p-4 mb-4 text-sm rounded-xl font-medium shadow-sm flex items-center justify-between"
+          "alert shadow-sm mb-4 flex items-center justify-between"
         end
 
         def alert_type_classes
           {
-            success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-            notice:  "bg-blue-50 text-blue-800 border border-blue-200",
-            alert:   "bg-amber-50 text-amber-800 border border-amber-200",
-            error:   "bg-red-50 text-red-800 border border-red-200"
+            success: "alert-success",
+            notice:  "alert-info",
+            alert:   "alert-warning",
+            error:   "alert-error"
           }
         end
       end
@@ -823,11 +819,11 @@ end
 
 # --- Part: 07_views.rb ---
 def add_views
-  puts "\n==> 7. Creating Views and Layouts..."
+  puts "\n==> 7. Creating Views and Layouts with DaisyUI Components..."
 
   create_file "app/views/layouts/application.html.erb", <<~'ERB', force: true
     <!DOCTYPE html>
-    <html>
+    <html data-theme="light">
     <head>
       <title><%= content_for(:title) || Rails.application.class.module_parent_name.titleize %></title>
       <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -848,14 +844,14 @@ def add_views
       <%= debugbar_head if defined? Debugbar %>
     </head>
 
-    <body class="bg-slate-50 min-h-screen flex flex-col font-sans antialiased text-slate-800">
+    <body class="bg-base-200 min-h-screen flex flex-col font-sans antialiased text-base-content">
       <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 my-auto py-8">
         <%= render_flash_messages if respond_to?(:render_flash_messages) %>
         <%= yield %>
 
         <% if user_signed_in? %>
           <div class="text-center mt-6">
-            <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition" do %>
+            <%= button_to destroy_user_session_path, method: :delete, data: { turbo: false }, class: "btn btn-error btn-outline btn-sm gap-2" do %>
               <i class="bi bi-box-arrow-right"></i> <%= t("layouts.application.log_out") %>
             <% end %>
           </div>
@@ -868,16 +864,18 @@ def add_views
 
   create_file "app/views/page/index.html.erb", <<~'ERB', force: true
     <div class="max-w-2xl mx-auto text-center py-12">
-      <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl mb-4">
+      <h1 class="text-4xl font-extrabold tracking-tight text-base-content sm:text-5xl mb-4">
         <%= Rails.application.class.module_parent_name.titleize %>
       </h1>
-      <p class="text-lg text-slate-600 mb-8">
+      <p class="text-lg text-base-content/80 mb-8">
         <%= t(".welcome_back", email: current_user.email) %>
       </p>
-      <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-6">
-        <p class="text-sm text-slate-500">
-          <%= t(".find_me_in", path: "app/views/page/index.html.erb") %>
-        </p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <p class="text-sm text-base-content/70">
+            <%= t(".find_me_in", path: "app/views/page/index.html.erb") %>
+          </p>
+        </div>
       </div>
     </div>
   ERB
@@ -885,125 +883,131 @@ def add_views
   # Devise Views
   create_file "app/views/devise/sessions/new.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".welcome_back") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".please_log_in") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".welcome_back") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".please_log_in") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
+            <%= recaptcha_v3(action: "LOGIN") if respond_to?(:recaptcha_v3) %>
+
+            <div class="space-y-4">
+              <%= f.input :email,
+                          required: false,
+                          autofocus: true,
+                          input_html: { autocomplete: "email" } %>
+
+              <%= f.input :password,
+                          required: false,
+                          input_html: { autocomplete: "current-password" } %>
+
+              <% if devise_mapping.rememberable? %>
+                <%= f.input :remember_me, as: :boolean %>
+              <% end %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".log_in"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
-          <%= recaptcha_v3(action: "LOGIN") if respond_to?(:recaptcha_v3) %>
-
-          <div class="space-y-4">
-            <%= f.input :email,
-                        required: false,
-                        autofocus: true,
-                        input_html: { autocomplete: "email" } %>
-
-            <%= f.input :password,
-                        required: false,
-                        input_html: { autocomplete: "current-password" } %>
-
-            <% if devise_mapping.rememberable? %>
-              <%= f.input :remember_me, as: :boolean %>
-            <% end %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".log_in"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/registrations/new.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".create_account") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".sign_up_to_get_started") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".create_account") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".sign_up_to_get_started") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
+            <%= recaptcha_v3(action: "REGISTRATION") if respond_to?(:recaptcha_v3) %>
+
+            <div class="space-y-4">
+              <%= f.input :email,
+                          required: true,
+                          autofocus: true,
+                          input_html: { autocomplete: "email" } %>
+
+              <%= f.input :password,
+                          required: true,
+                          hint: (t(".minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
+                          input_html: { autocomplete: "new-password" } %>
+
+              <%= f.input :password_confirmation,
+                          required: true,
+                          input_html: { autocomplete: "new-password" } %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".sign_up"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), data: { turbo: false }) do |f| %>
-          <%= recaptcha_v3(action: "REGISTRATION") if respond_to?(:recaptcha_v3) %>
-
-          <div class="space-y-4">
-            <%= f.input :email,
-                        required: true,
-                        autofocus: true,
-                        input_html: { autocomplete: "email" } %>
-
-            <%= f.input :password,
-                        required: true,
-                        hint: (t(".minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
-                        input_html: { autocomplete: "new-password" } %>
-
-            <%= f.input :password_confirmation,
-                        required: true,
-                        input_html: { autocomplete: "new-password" } %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".sign_up"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/registrations/edit.html.erb", <<~'ERB', force: true
     <div class="max-w-lg mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".edit_account") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".update_profile_settings") %></p>
-        </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-          <%= f.error_notification %>
-
-          <div class="space-y-4">
-            <%= f.input :email, required: true, autofocus: true %>
-
-            <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-              <div class="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs">
-                <%= t(".currently_waiting_confirmation_for", email: resource.unconfirmed_email) %>
-              </div>
-            <% end %>
-
-            <%= f.input :password,
-                        hint: t(".leave_blank_if_unchanged"),
-                        required: false,
-                        input_html: { autocomplete: "new-password" } %>
-
-            <%= f.input :password_confirmation,
-                        required: false,
-                        input_html: { autocomplete: "new-password" } %>
-
-            <%= f.input :current_password,
-                        hint: t(".need_current_password"),
-                        required: true,
-                        input_html: { autocomplete: "current-password" } %>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="mb-6">
+            <h2 class="card-title text-2xl font-bold text-base-content"><%= t(".edit_account") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".update_profile_settings") %></p>
           </div>
 
-          <div class="flex items-center justify-between mt-6">
-            <%= link_to t(".back"), :back, class: "px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg text-sm hover:bg-slate-50 transition" %>
-            <%= f.button :submit, t(".update_profile"), class: "py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
+          <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+            <%= f.error_notification %>
 
-        <div class="mt-8 pt-6 border-t border-slate-200">
-          <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <h3 class="text-sm font-semibold text-red-900"><%= t(".cancel_account") %></h3>
-              <p class="text-xs text-red-600 mt-0.5"><%= t(".permanently_delete_account") %></p>
+            <div class="space-y-4">
+              <%= f.input :email, required: true, autofocus: true %>
+
+              <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+                <div class="alert alert-info text-xs p-3">
+                  <span><%= t(".currently_waiting_confirmation_for", email: resource.unconfirmed_email) %></span>
+                </div>
+              <% end %>
+
+              <%= f.input :password,
+                          hint: t(".leave_blank_if_unchanged"),
+                          required: false,
+                          input_html: { autocomplete: "new-password" } %>
+
+              <%= f.input :password_confirmation,
+                          required: false,
+                          input_html: { autocomplete: "new-password" } %>
+
+              <%= f.input :current_password,
+                          hint: t(".need_current_password"),
+                          required: true,
+                          input_html: { autocomplete: "current-password" } %>
             </div>
-            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: t(".are_you_sure"), turbo_confirm: t(".are_you_sure") }, method: :delete, class: "px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-sm transition" %>
+
+            <div class="flex items-center justify-between mt-6 gap-3">
+              <%= link_to t(".back"), :back, class: "btn btn-ghost border-base-300" %>
+              <%= f.button :submit, t(".update_profile"), class: "btn btn-primary" %>
+            </div>
+          <% end %>
+
+          <div class="divider mt-8 mb-4"></div>
+
+          <div class="alert alert-error bg-error/10 border-error/20 flex justify-between items-center">
+            <div>
+              <h3 class="text-sm font-semibold text-error"><%= t(".cancel_account") %></h3>
+              <p class="text-xs text-error/80 mt-0.5"><%= t(".permanently_delete_account") %></p>
+            </div>
+            <%= button_to t(".delete_account"), registration_path(resource_name), data: { confirm: t(".are_you_sure"), turbo_confirm: t(".are_you_sure") }, method: :delete, class: "btn btn-error btn-sm text-white" %>
           </div>
         </div>
       </div>
@@ -1012,169 +1016,173 @@ def add_views
 
   create_file "app/views/devise/passwords/new.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".forgot_password") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".enter_email_to_reset") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".forgot_password") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".enter_email_to_reset") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
+            <%= f.error_notification %>
+
+            <div class="space-y-4">
+              <%= f.input :email,
+                          required: true,
+                          autofocus: true,
+                          input_html: { autocomplete: "email" } %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".send_reset_instructions"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
-          <%= f.error_notification %>
-
-          <div class="space-y-4">
-            <%= f.input :email,
-                        required: true,
-                        autofocus: true,
-                        input_html: { autocomplete: "email" } %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".send_reset_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/passwords/edit.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".change_password") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".set_new_password") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".change_password") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".set_new_password") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
+            <%= f.error_notification %>
+
+            <%= f.input :reset_password_token, as: :hidden %>
+            <%= f.full_error :reset_password_token %>
+
+            <div class="space-y-4">
+              <%= f.input :password,
+                          label: t(".new_password"),
+                          required: true,
+                          autofocus: true,
+                          hint: (t("devise.registrations.new.minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
+                          input_html: { autocomplete: "new-password" } %>
+
+              <%= f.input :password_confirmation,
+                          label: t(".confirm_new_password"),
+                          required: true,
+                          input_html: { autocomplete: "new-password" } %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".change_my_password"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-          <%= f.error_notification %>
-
-          <%= f.input :reset_password_token, as: :hidden %>
-          <%= f.full_error :reset_password_token %>
-
-          <div class="space-y-4">
-            <%= f.input :password,
-                        label: t(".new_password"),
-                        required: true,
-                        autofocus: true,
-                        hint: (t("devise.registrations.new.minimum_password_length", count: @minimum_password_length) if @minimum_password_length),
-                        input_html: { autocomplete: "new-password" } %>
-
-            <%= f.input :password_confirmation,
-                        label: t(".confirm_new_password"),
-                        required: true,
-                        input_html: { autocomplete: "new-password" } %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".change_my_password"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/confirmations/new.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_confirmation") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".request_new_confirmation_email") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".resend_confirmation") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".request_new_confirmation_email") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+            <%= f.error_notification %>
+            <%= f.full_error :confirmation_token %>
+
+            <div class="space-y-4">
+              <%= f.input :email,
+                          required: true,
+                          autofocus: true,
+                          value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
+                          input_html: { autocomplete: "email" } %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".resend_instructions"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-          <%= f.error_notification %>
-          <%= f.full_error :confirmation_token %>
-
-          <div class="space-y-4">
-            <%= f.input :email,
-                        required: true,
-                        autofocus: true,
-                        value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
-                        input_html: { autocomplete: "email" } %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".resend_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/unlocks/new.html.erb", <<~'ERB', force: true
     <div class="max-w-md mx-auto">
-      <div class="bg-white shadow-md border border-slate-200 rounded-2xl p-6 sm:p-8">
-        <div class="text-center mb-6">
-          <h2 class="text-2xl font-bold text-slate-900"><%= t(".resend_unlock") %></h2>
-          <p class="text-sm text-slate-500 mt-1"><%= t(".request_unlock_instructions") %></p>
+      <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body">
+          <div class="text-center mb-6">
+            <h2 class="card-title text-2xl font-bold justify-center text-base-content"><%= t(".resend_unlock") %></h2>
+            <p class="text-sm text-base-content/70 mt-1"><%= t(".request_unlock_instructions") %></p>
+          </div>
+
+          <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
+            <%= f.error_notification %>
+            <%= f.full_error :unlock_token %>
+
+            <div class="space-y-4">
+              <%= f.input :email,
+                          required: true,
+                          autofocus: true,
+                          input_html: { autocomplete: "email" } %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.button :submit, t(".resend_unlock_instructions"), class: "btn btn-primary w-full" %>
+            </div>
+          <% end %>
+
+          <%= render "devise/shared/links" %>
         </div>
-
-        <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
-          <%= f.error_notification %>
-          <%= f.full_error :unlock_token %>
-
-          <div class="space-y-4">
-            <%= f.input :email,
-                        required: true,
-                        autofocus: true,
-                        input_html: { autocomplete: "email" } %>
-          </div>
-
-          <div class="mt-6">
-            <%= f.button :submit, t(".resend_unlock_instructions"), class: "w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-          </div>
-        <% end %>
-
-        <%= render "devise/shared/links" %>
       </div>
     </div>
   ERB
 
   create_file "app/views/devise/shared/_links.html.erb", <<~'ERB', force: true
-    <div class="mt-6 pt-4 border-t border-slate-200 text-center text-xs text-slate-500 space-y-2">
+    <div class="mt-6 pt-4 border-t border-base-200 text-center text-xs text-base-content/70 space-y-2">
       <%- if controller_name != 'sessions' %>
-        <div><%= t(".already_have_account") %> <%= link_to t(".log_in"), new_session_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".already_have_account") %> <%= link_to t(".log_in"), new_session_path(resource_name), data: { turbo: false }, class: "link link-primary font-semibold" %></div>
       <% end %>
 
       <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
-        <div><%= t(".dont_have_account") %> <%= link_to t(".sign_up"), new_registration_path(resource_name), data: { turbo: false }, class: "font-semibold text-indigo-600 hover:text-indigo-500" %></div>
+        <div><%= t(".dont_have_account") %> <%= link_to t(".sign_up"), new_registration_path(resource_name), data: { turbo: false }, class: "link link-primary font-semibold" %></div>
       <% end %>
 
       <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-        <div><%= link_to t(".forgot_your_password"), new_password_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".forgot_your_password"), new_password_path(resource_name), class: "link link-hover" %></div>
       <% end %>
 
       <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
-        <div><%= link_to t(".didnt_receive_confirmation_instructions"), new_confirmation_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_confirmation_instructions"), new_confirmation_path(resource_name), class: "link link-hover" %></div>
       <% end %>
 
       <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
-        <div><%= link_to t(".didnt_receive_unlock_instructions"), new_unlock_path(resource_name), class: "hover:underline" %></div>
+        <div><%= link_to t(".didnt_receive_unlock_instructions"), new_unlock_path(resource_name), class: "link link-hover" %></div>
       <% end %>
     </div>
 
     <%- if devise_mapping.omniauthable? %>
-      <div class="mt-6">
-        <div class="relative flex py-2 items-center">
-          <div class="flex-grow border-t border-slate-200"></div>
-          <span class="flex-shrink mx-3 text-xs text-slate-400 uppercase tracking-wider">
-            <%- if controller_name == 'sessions' %>
-              <%= t(".or_log_in_with") %>
-            <%- else %>
-              <%= t(".or_create_account_with") %>
-            <% end %>
-          </span>
-          <div class="flex-grow border-t border-slate-200"></div>
+      <div class="mt-4">
+        <div class="divider text-xs text-base-content/50 uppercase tracking-wider">
+          <%- if controller_name == 'sessions' %>
+            <%= t(".or_log_in_with") %>
+          <%- else %>
+            <%= t(".or_create_account_with") %>
+          <% end %>
         </div>
 
         <div class="mt-3 flex gap-2">
           <%- resource_class.omniauth_providers.each do |provider| %>
-            <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "flex-1 inline-flex justify-center items-center gap-2 py-2 px-3 border border-slate-300 rounded-lg shadow-sm bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2", form_class: "flex-1" do %>
+            <%= button_to omniauth_authorize_path(resource_name, provider), data: { turbo: false }, class: "btn btn-outline btn-sm flex-1 gap-2", form_class: "flex-1" do %>
               <i class="bi bi-<%= provider.to_s.split('_').first %> text-base"></i>
               <span class="capitalize"><%= provider.to_s.split('_').first %></span>
             <% end %>
@@ -1186,14 +1194,14 @@ def add_views
 
   create_file "app/views/devise/shared/_error_messages.html.erb", <<~'ERB', force: true
     <% if resource.errors.any? %>
-      <div id="error_explanation" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-900" data-turbo-cache="false">
-        <h3 class="text-sm font-semibold mb-2">
+      <div id="error_explanation" class="alert alert-error mb-4 flex flex-col items-start" data-turbo-cache="false">
+        <h3 class="text-sm font-semibold">
           <%= I18n.t("errors.messages.not_saved",
                      count: resource.errors.count,
                      resource: resource.class.model_name.human.downcase)
            %>
         </h3>
-        <ul class="list-disc list-inside text-xs space-y-1 text-red-700">
+        <ul class="list-disc list-inside text-xs space-y-1">
           <% resource.errors.full_messages.each do |message| %>
             <li><%= message %></li>
           <% end %>
@@ -1202,7 +1210,6 @@ def add_views
     <% end %>
   ERB
 end
-
 # --- Part: 08_mailers.rb ---
 def add_mailers
   puts "\n==> 8. Creating Mailer Views and Layouts..."

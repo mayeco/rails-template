@@ -120,19 +120,19 @@ def add_configurations
     # frozen_string_literal: true
 
     SimpleForm.setup do |config|
-      config.button_class = 'my-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2 px-4 rounded-lg shadow-sm transition'
-      config.boolean_label_class = ''
+      config.button_class = "btn btn-primary my-2"
+      config.boolean_label_class = ""
       config.label_text = ->(label, required, _explicit_label) { "#{label} #{required}" }
       config.boolean_style = :inline
       config.item_wrapper_tag = :div
       config.include_default_input_wrapper_class = false
-      config.error_notification_class = 'p-4 mb-4 text-sm rounded-xl font-medium shadow-sm bg-red-50 text-red-800 border border-red-200'
+      config.error_notification_class = "alert alert-error mb-4"
       config.error_method = :to_sentence
-      config.input_field_error_class = 'border-red-500'
-      config.input_field_valid_class = 'border-emerald-500'
-      config.label_class = 'text-sm font-medium text-slate-700'
+      config.input_field_error_class = "input-error"
+      config.input_field_valid_class = "input-success"
+      config.label_class = "label-text font-medium text-base-content/80"
 
-      config.wrappers :vertical_form, tag: 'div', class: 'mb-4' do |b|
+      config.wrappers :vertical_form, tag: "div", class: "form-control w-full mb-4" do |b|
         b.use :html5
         b.use :placeholder
         b.optional :maxlength
@@ -140,61 +140,57 @@ def add_configurations
         b.optional :pattern
         b.optional :min_max
         b.optional :readonly
-        b.use :label, class: 'block text-sm font-medium text-slate-700 mb-1', error_class: 'text-red-500'
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
         b.use :input,
-              class: 'block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800 leading-6 transition duration-150 ease-in-out', error_class: 'border-red-500', valid_class: 'border-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+              class: "input input-bordered w-full", error_class: "input-error", valid_class: "input-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_boolean, tag: 'div', class: 'mb-4 flex items-start', error_class: '' do |b|
+      config.wrappers :vertical_boolean, tag: "div", class: "form-control mb-4" do |b|
         b.use :html5
         b.optional :readonly
-        b.wrapper tag: 'div', class: 'flex items-center h-5' do |ba|
-          ba.use :input,
-                 class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded'
+        b.wrapper tag: "label", class: "label cursor-pointer justify-start gap-3 py-1" do |ba|
+          ba.use :input, class: "checkbox checkbox-primary"
+          ba.use :label, class: "label-text font-medium text-base-content/80 cursor-pointer", error_class: "text-error"
         end
-        b.wrapper tag: 'div', class: 'ml-3 text-sm' do |bb|
-          bb.use :label, class: 'block text-sm font-medium text-slate-700', error_class: 'text-red-500'
-          bb.use :hint, wrap_with: { tag: 'p', class: 'block text-xs text-slate-500' }
-          bb.use :full_error, wrap_with: { tag: 'p', class: 'block text-xs text-red-600' }
-        end
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_collection, item_wrapper_class: 'flex items-center',
-                                            item_label_class: 'my-1 ml-3 block text-sm font-medium text-slate-700', tag: 'div', class: 'my-4' do |b|
+      config.wrappers :vertical_collection, item_wrapper_class: "flex items-center gap-2",
+                                            item_label_class: "my-1 text-sm font-medium text-base-content/80", tag: "div", class: "my-4" do |b|
         b.use :html5
         b.optional :readonly
-        b.wrapper :legend_tag, tag: 'legend', class: 'text-sm font-medium text-slate-700 mb-1',
-                               error_class: 'text-red-500' do |ba|
+        b.wrapper :legend_tag, tag: "legend", class: "text-sm font-medium text-base-content/80 mb-1",
+                               error_class: "text-error" do |ba|
           ba.use :label_text
         end
         b.use :input,
-              class: 'focus:ring-2 focus:ring-indigo-500 ring-offset-2 h-4 w-4 text-indigo-600 border-slate-300 rounded', error_class: 'text-red-500', valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'block mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+              class: "checkbox checkbox-primary", error_class: "checkbox-error", valid_class: "checkbox-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "block mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_file, tag: 'div', class: 'mb-4' do |b|
+      config.wrappers :vertical_file, tag: "div", class: "form-control w-full mb-4" do |b|
         b.use :html5
         b.use :placeholder
         b.optional :maxlength
         b.optional :minlength
         b.optional :readonly
-        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
-        b.use :input, class: 'w-full text-slate-700 px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm', error_class: 'text-red-500 border-red-500',
-                      valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
+        b.use :input, class: "file-input file-input-bordered w-full", error_class: "file-input-error", valid_class: "file-input-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
-      config.wrappers :vertical_select, tag: 'div', class: 'my-4', error_class: 'f', valid_class: '' do |b|
+      config.wrappers :vertical_select, tag: "div", class: "form-control w-full my-4", error_class: "", valid_class: "" do |b|
         b.use :html5
         b.optional :readonly
-        b.use :label, class: 'text-sm font-medium text-slate-700 block mb-1', error_class: 'text-red-500'
-        b.use :input, class: 'mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-slate-800', error_class: 'text-red-500', valid_class: 'text-emerald-500'
-        b.use :full_error, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-red-600' }
-        b.use :hint, wrap_with: { tag: 'p', class: 'mt-1 text-xs text-slate-500' }
+        b.use :label, class: "label-text font-medium text-base-content/80 mb-1 block", error_class: "text-error"
+        b.use :input, class: "select select-bordered w-full", error_class: "select-error", valid_class: "select-success"
+        b.use :full_error, wrap_with: { tag: "p", class: "mt-1 text-xs text-error" }
+        b.use :hint, wrap_with: { tag: "p", class: "mt-1 text-xs text-base-content/60" }
       end
 
       config.default_wrapper = :vertical_form
@@ -249,15 +245,15 @@ def add_configurations
         private
 
         def default_alert_classes
-          "p-4 mb-4 text-sm rounded-xl font-medium shadow-sm flex items-center justify-between"
+          "alert shadow-sm mb-4 flex items-center justify-between"
         end
 
         def alert_type_classes
           {
-            success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-            notice:  "bg-blue-50 text-blue-800 border border-blue-200",
-            alert:   "bg-amber-50 text-amber-800 border border-amber-200",
-            error:   "bg-red-50 text-red-800 border border-red-200"
+            success: "alert-success",
+            notice:  "alert-info",
+            alert:   "alert-warning",
+            error:   "alert-error"
           }
         end
       end
