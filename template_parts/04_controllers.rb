@@ -74,7 +74,7 @@ def add_controllers
         @user = User.from_omniauth_email(auth_hash)
         return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
 
-        @user.confirm unless @user.confirmed?
+        @user.confirm if User.devise_modules.include?(:confirmable) && !@user.confirmed?
         user_omniauth_providers
 
         if @user.persisted?
