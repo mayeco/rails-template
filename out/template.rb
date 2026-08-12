@@ -493,7 +493,7 @@ def add_controllers
 
       def initialize_user_from_auth_email
         if auth_hash.blank? || auth_hash.info&.email.blank?
-          return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
+          return redirect_to new_user_session_path, alert: t("devise.failure.missing_oauth_email")
         end
 
         info = auth_hash.info
@@ -502,7 +502,7 @@ def add_controllers
         end
 
         @user = User.from_omniauth_email(auth_hash)
-        return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
+        return redirect_to new_user_session_path, alert: t("devise.failure.oauth_auth_failed") if @user.nil?
 
         @user.confirm if User.devise_modules.include?(:confirmable) && !@user.confirmed?
         user_omniauth_providers
@@ -674,6 +674,8 @@ def add_locales
         failure:
           recaptcha_failed: "Verificación reCAPTCHA fallida, inténtalo de nuevo."
           unverified_oauth_email: "El correo electrónico de tu cuenta no ha sido verificado por el proveedor."
+          missing_oauth_email: "Error de autenticación: el proveedor no proporcionó un correo electrónico."
+          oauth_auth_failed: "Error de autenticación."
         sessions:
           new:
             welcome_back: "Bienvenido de nuevo"
@@ -767,6 +769,8 @@ def add_locales
         failure:
           recaptcha_failed: "reCAPTCHA verification failed, please try again."
           unverified_oauth_email: "Your account email has not been verified by the provider."
+          missing_oauth_email: "Authentication failed: missing email from provider."
+          oauth_auth_failed: "Authentication failed."
         sessions:
           new:
             welcome_back: "Welcome back"
@@ -2339,6 +2343,10 @@ after_bundle do
 
   gsub_file "config/initializers/devise.rb", /config\.mailer_sender = .*/, 'config.mailer_sender = Figaro.env.mailer_sender || "no-reply@example.com"'
   gsub_file "config/initializers/devise.rb", /# config.sign_out_via = :delete/, "config.sign_out_via = :delete"
+
+  if File.exist?("Dockerfile")
+    gsub_file "Dockerfile", "COPY Gemfile Gemfile.lock ./", "COPY Gemfile Gemfile.lock .ruby-version ./"
+  end
 
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do

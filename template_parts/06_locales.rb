@@ -14,6 +14,8 @@ def add_locales
         failure:
           recaptcha_failed: "Verificación reCAPTCHA fallida, inténtalo de nuevo."
           unverified_oauth_email: "El correo electrónico de tu cuenta no ha sido verificado por el proveedor."
+          missing_oauth_email: "Error de autenticación: el proveedor no proporcionó un correo electrónico."
+          oauth_auth_failed: "Error de autenticación."
         sessions:
           new:
             welcome_back: "Bienvenido de nuevo"
@@ -107,6 +109,8 @@ def add_locales
         failure:
           recaptcha_failed: "reCAPTCHA verification failed, please try again."
           unverified_oauth_email: "Your account email has not been verified by the provider."
+          missing_oauth_email: "Authentication failed: missing email from provider."
+          oauth_auth_failed: "Authentication failed."
         sessions:
           new:
             welcome_back: "Welcome back"

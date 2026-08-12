@@ -74,7 +74,7 @@ def add_controllers
 
       def initialize_user_from_auth_email
         if auth_hash.blank? || auth_hash.info&.email.blank?
-          return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
+          return redirect_to new_user_session_path, alert: t("devise.failure.missing_oauth_email")
         end
 
         info = auth_hash.info
@@ -83,7 +83,7 @@ def add_controllers
         end
 
         @user = User.from_omniauth_email(auth_hash)
-        return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
+        return redirect_to new_user_session_path, alert: t("devise.failure.oauth_auth_failed") if @user.nil?
 
         @user.confirm if User.devise_modules.include?(:confirmable) && !@user.confirmed?
         user_omniauth_providers

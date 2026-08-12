@@ -130,6 +130,10 @@ after_bundle do
   gsub_file "config/initializers/devise.rb", /config\.mailer_sender = .*/, 'config.mailer_sender = Figaro.env.mailer_sender || "no-reply@example.com"'
   gsub_file "config/initializers/devise.rb", /# config.sign_out_via = :delete/, "config.sign_out_via = :delete"
 
+  if File.exist?("Dockerfile")
+    gsub_file "Dockerfile", "COPY Gemfile Gemfile.lock ./", "COPY Gemfile Gemfile.lock .ruby-version ./"
+  end
+
   if File.exist?("bin/setup") && File.exist?("config/application.yml.example")
     inject_into_file "bin/setup", after: "puts \"== Installing dependencies ==\"\n" do
       <<~'RUBY'
