@@ -10,7 +10,6 @@ echo "" >> "$OUT_FILE"
 echo "# ==============================================================================" >> "$OUT_FILE"
 echo "# Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)" >> "$OUT_FILE"
 echo "# Source files: template_parts/*.rb" >> "$OUT_FILE"
-echo "# Built at: $(date)" >> "$OUT_FILE"
 echo "# ==============================================================================" >> "$OUT_FILE"
 echo "" >> "$OUT_FILE"
 

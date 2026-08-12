@@ -37,9 +37,13 @@ def add_controllers
       end
 
       def check_captcha
-        return if verify_recaptcha(action: "REGISTRATION")
+        return if verify_recaptcha(action: "registration")
 
-        raise Recaptcha::RecaptchaError, "Recaptcha verification failed"
+        self.resource = resource_class.new(sign_up_params)
+        resource.validate
+        set_minimum_password_length
+        flash.now[:alert] = t("devise.failure.recaptcha_failed")
+        render :new, status: :unprocessable_entity
       end
     end
   RUBY
@@ -51,9 +55,11 @@ def add_controllers
       prepend_before_action :check_captcha, only: [:create]
 
       def check_captcha
-        return if verify_recaptcha(action: "LOGIN")
+        return if verify_recaptcha(action: "login")
 
-        raise Recaptcha::RecaptchaError, "Recaptcha verification failed"
+        self.resource = resource_class.new(sign_in_params)
+        flash.now[:alert] = t("devise.failure.recaptcha_failed")
+        render :new, status: :unprocessable_entity
       end
     end
   RUBY
@@ -71,6 +77,11 @@ def add_controllers
           return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
         end
 
+        info = auth_hash.info
+        if info.respond_to?(:email_verified) && info.email_verified == false
+          return redirect_to new_user_session_path, alert: t("devise.failure.unverified_oauth_email")
+        end
+
         @user = User.from_omniauth_email(auth_hash)
         return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
 
@@ -86,13 +97,28 @@ def add_controllers
 
       def user_omniauth_providers
         provider = auth_hash["provider"]
+        @user.provider ||= provider
+        @user.uid ||= auth_hash[:uid]
         if @user.omniauth_providers[provider].nil?
           @user.omniauth_providers[provider] = {
-            "uid": auth_hash[:uid],
-            "info": auth_hash[:info]
+            "uid" => auth_hash[:uid],
+            "email" => auth_hash.info&.email
           }
         end
-        @user.save
+        begin
+          @user.save
+        rescue ActiveRecord::RecordNotUnique
+          @user = User.find_by!(email: auth_hash.info.email)
+          @user.provider ||= provider
+          @user.uid ||= auth_hash[:uid]
+          if @user.omniauth_providers[provider].nil?
+            @user.omniauth_providers[provider] = {
+              "uid" => auth_hash[:uid],
+              "email" => auth_hash.info&.email
+            }
+          end
+          @user.save
+        end
       end
 
       def google_oauth2; end

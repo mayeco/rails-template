@@ -2,7 +2,7 @@
 # Main flow execution
 # ==============================================================================
 
-unless Rails::VERSION::STRING >= "8.1.0"
+unless Gem::Version.new(Rails::VERSION::STRING) >= Gem::Version.new("8.1.0")
   raise "rails-core error: template requires Rails 8.1.0 or higher (detected #{Rails::VERSION::STRING})"
 end
 
@@ -58,8 +58,13 @@ after_bundle do
   end
 
   puts "\n==> Installing DaisyUI v5 for Tailwind CSS v4..."
-  run "curl -sLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs"
-  run "curl -sLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs"
+  DAISYUI_VERSION = "5.7.16"
+  run "curl -fsSLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/download/v#{DAISYUI_VERSION}/daisyui.mjs"
+  run "curl -fsSLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/download/v#{DAISYUI_VERSION}/daisyui-theme.mjs"
+
+  unless File.size?("app/assets/tailwind/daisyui.mjs")
+    raise "rails-core error: failed to download DaisyUI assets"
+  end
 
   if File.exist?("app/assets/tailwind/application.css")
     append_to_file "app/assets/tailwind/application.css" do
@@ -131,6 +136,14 @@ after_bundle do
           unless File.exist?("config/application.yml")
             puts "\n== Copying config/application.yml.example to config/application.yml =="
             FileUtils.cp("config/application.yml.example", "config/application.yml")
+            require "securerandom"
+            yml = "config/application.yml"
+            content = File.read(yml)
+            if content.include?('prefixed_ids_salt: "default_salt_key_123"')
+              File.write(yml, content.sub('prefixed_ids_salt: "default_salt_key_123"',
+                                          "prefixed_ids_salt: \"#{SecureRandom.hex(32)}\""))
+              puts "== Generated random prefixed_ids_salt =="
+            end
           end
       RUBY
     end

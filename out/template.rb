@@ -3,7 +3,6 @@
 # ==============================================================================
 # Rails Application Template: rails-core (GENERATED FILE - DO NOT EDIT DIRECTLY)
 # Source files: template_parts/*.rb
-# Built at: Thu Aug  6 22:25:30 -04 2026
 # ==============================================================================
 
 # --- Part: 01_gems.rb ---
@@ -67,8 +66,8 @@ def add_configurations
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
-  environment "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }", env: "development"
-  environment "config.action_mailer.default_url_options = { host: 'www.change-me.com', protocol: 'https' }", env: "production"
+  environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: "development"
+  environment 'config.action_mailer.default_url_options = { host: "www.change-me.com", protocol: "https" }', env: "production"
   environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
@@ -457,9 +456,13 @@ def add_controllers
       end
 
       def check_captcha
-        return if verify_recaptcha(action: "REGISTRATION")
+        return if verify_recaptcha(action: "registration")
 
-        raise Recaptcha::RecaptchaError, "Recaptcha verification failed"
+        self.resource = resource_class.new(sign_up_params)
+        resource.validate
+        set_minimum_password_length
+        flash.now[:alert] = t("devise.failure.recaptcha_failed")
+        render :new, status: :unprocessable_entity
       end
     end
   RUBY
@@ -471,9 +474,11 @@ def add_controllers
       prepend_before_action :check_captcha, only: [:create]
 
       def check_captcha
-        return if verify_recaptcha(action: "LOGIN")
+        return if verify_recaptcha(action: "login")
 
-        raise Recaptcha::RecaptchaError, "Recaptcha verification failed"
+        self.resource = resource_class.new(sign_in_params)
+        flash.now[:alert] = t("devise.failure.recaptcha_failed")
+        render :new, status: :unprocessable_entity
       end
     end
   RUBY
@@ -491,6 +496,11 @@ def add_controllers
           return redirect_to new_user_session_path, alert: "Authentication failed: missing email from provider."
         end
 
+        info = auth_hash.info
+        if info.respond_to?(:email_verified) && info.email_verified == false
+          return redirect_to new_user_session_path, alert: t("devise.failure.unverified_oauth_email")
+        end
+
         @user = User.from_omniauth_email(auth_hash)
         return redirect_to new_user_session_path, alert: "Authentication failed." if @user.nil?
 
@@ -506,13 +516,28 @@ def add_controllers
 
       def user_omniauth_providers
         provider = auth_hash["provider"]
+        @user.provider ||= provider
+        @user.uid ||= auth_hash[:uid]
         if @user.omniauth_providers[provider].nil?
           @user.omniauth_providers[provider] = {
-            "uid": auth_hash[:uid],
-            "info": auth_hash[:info]
+            "uid" => auth_hash[:uid],
+            "email" => auth_hash.info&.email
           }
         end
-        @user.save
+        begin
+          @user.save
+        rescue ActiveRecord::RecordNotUnique
+          @user = User.find_by!(email: auth_hash.info.email)
+          @user.provider ||= provider
+          @user.uid ||= auth_hash[:uid]
+          if @user.omniauth_providers[provider].nil?
+            @user.omniauth_providers[provider] = {
+              "uid" => auth_hash[:uid],
+              "email" => auth_hash.info&.email
+            }
+          end
+          @user.save
+        end
       end
 
       def google_oauth2; end
@@ -646,6 +671,9 @@ def add_locales
           welcome_back: "Bienvenido de nuevo, %{email}!"
           find_me_in: "Encuentra esta vista en %{path}"
       devise:
+        failure:
+          recaptcha_failed: "Verificación reCAPTCHA fallida, inténtalo de nuevo."
+          unverified_oauth_email: "El correo electrónico de tu cuenta no ha sido verificado por el proveedor."
         sessions:
           new:
             welcome_back: "Bienvenido de nuevo"
@@ -736,6 +764,9 @@ def add_locales
           welcome_back: "Welcome back, %{email}!"
           find_me_in: "Find this view in %{path}"
       devise:
+        failure:
+          recaptcha_failed: "reCAPTCHA verification failed, please try again."
+          unverified_oauth_email: "Your account email has not been verified by the provider."
         sessions:
           new:
             welcome_back: "Welcome back"
@@ -1328,13 +1359,13 @@ def add_automation_scripts
 
     echo "Setting up Heroku environment variables from application.yml for ${APP_NAME}..."
 
-    mapfile -t PAIRS < <(ruby -e '
+    mapfile -d '' -t PAIRS < <(ruby -e '
       require "yaml"
       begin
         config = YAML.load_file("config/application.yml") || {}
         config.each do |key, value|
           next if value.nil? || value.to_s.strip.empty?
-          puts "#{key}=#{value}"
+          print "#{key}=#{value}\0"
         end
       rescue => e
         STDERR.puts "Error reading application.yml: #{e.message}"
@@ -1353,6 +1384,8 @@ def add_automation_scripts
 
     echo "Finished setting up Heroku environment variables."
   BASH
+
+  chmod "script/setup_heroku_env.sh", 0o755
 end
 
 # --- Part: 11_readme.rb ---
@@ -2179,7 +2212,7 @@ end
 # Main flow execution
 # ==============================================================================
 
-unless Rails::VERSION::STRING >= "8.1.0"
+unless Gem::Version.new(Rails::VERSION::STRING) >= Gem::Version.new("8.1.0")
   raise "rails-core error: template requires Rails 8.1.0 or higher (detected #{Rails::VERSION::STRING})"
 end
 
@@ -2235,8 +2268,13 @@ after_bundle do
   end
 
   puts "\n==> Installing DaisyUI v5 for Tailwind CSS v4..."
-  run "curl -sLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs"
-  run "curl -sLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs"
+  DAISYUI_VERSION = "5.7.16"
+  run "curl -fsSLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/download/v#{DAISYUI_VERSION}/daisyui.mjs"
+  run "curl -fsSLo app/assets/tailwind/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/download/v#{DAISYUI_VERSION}/daisyui-theme.mjs"
+
+  unless File.size?("app/assets/tailwind/daisyui.mjs")
+    raise "rails-core error: failed to download DaisyUI assets"
+  end
 
   if File.exist?("app/assets/tailwind/application.css")
     append_to_file "app/assets/tailwind/application.css" do
@@ -2308,6 +2346,14 @@ after_bundle do
           unless File.exist?("config/application.yml")
             puts "\n== Copying config/application.yml.example to config/application.yml =="
             FileUtils.cp("config/application.yml.example", "config/application.yml")
+            require "securerandom"
+            yml = "config/application.yml"
+            content = File.read(yml)
+            if content.include?('prefixed_ids_salt: "default_salt_key_123"')
+              File.write(yml, content.sub('prefixed_ids_salt: "default_salt_key_123"',
+                                          "prefixed_ids_salt: \"#{SecureRandom.hex(32)}\""))
+              puts "== Generated random prefixed_ids_salt =="
+            end
           end
       RUBY
     end

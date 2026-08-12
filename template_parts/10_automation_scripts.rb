@@ -28,13 +28,13 @@ def add_automation_scripts
 
     echo "Setting up Heroku environment variables from application.yml for ${APP_NAME}..."
 
-    mapfile -t PAIRS < <(ruby -e '
+    mapfile -d '' -t PAIRS < <(ruby -e '
       require "yaml"
       begin
         config = YAML.load_file("config/application.yml") || {}
         config.each do |key, value|
           next if value.nil? || value.to_s.strip.empty?
-          puts "#{key}=#{value}"
+          print "#{key}=#{value}\0"
         end
       rescue => e
         STDERR.puts "Error reading application.yml: #{e.message}"
@@ -53,4 +53,6 @@ def add_automation_scripts
 
     echo "Finished setting up Heroku environment variables."
   BASH
+
+  chmod "script/setup_heroku_env.sh", 0o755
 end
