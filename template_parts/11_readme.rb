@@ -317,17 +317,18 @@ def add_readme
 
     ### OAuth Login Flow (`Users::OmniauthCallbacksController`)
 
-    Users can sign in via Google, Facebook, or Microsoft. Account mapping uses `User.from_omniauth_email(auth)`:
+    Users can sign in via Google, Facebook, or Microsoft. Account mapping uses `User.from_omniauth(auth, current_user)`:
 
     ```ruby
-    def self.from_omniauth_email(auth)
-      where(email: auth.info.email).first_or_initialize do |user|
-        user.password = Devise.friendly_token[0, 20]
-      end
+    def self.from_omniauth(auth, current_user = nil)
+      identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+      # 1. Known identity -> return its user
+      # 2. Logged-in user -> link the new provider to their account
+      # 3. Otherwise -> find or create the user by email and attach the identity
     end
     ```
 
-    OAuth credentials and metadata are stored per-provider in the `users.omniauth_providers` JSON column, alongside the `provider` and `uid` database columns.
+    OAuth credentials are stored per-provider in the `identities` table (`provider`, `uid`, `email`), linked to `users` via `user_id`. This allows one user to link multiple providers. Password is optional for 100% social accounts (`User#password_required?` returns false when identities exist).
 
     ### reCAPTCHA v3 Protection
 

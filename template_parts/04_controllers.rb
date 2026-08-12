@@ -28,7 +28,7 @@ def add_controllers
     # frozen_string_literal: true
 
     class Users::RegistrationsController < Devise::RegistrationsController
-      prepend_before_action :check_captcha, only: [:create]
+      prepend_before_action :check_captcha, only: [ :create ]
 
       protected
 
@@ -52,7 +52,7 @@ def add_controllers
     # frozen_string_literal: true
 
     class Users::SessionsController < Devise::SessionsController
-      prepend_before_action :check_captcha, only: [:create]
+      prepend_before_action :check_captcha, only: [ :create ]
 
       def check_captcha
         return if verify_recaptcha(action: "login")
@@ -70,9 +70,7 @@ def add_controllers
     class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       layout false
 
-      before_action :initialize_user_from_auth_email, except: [:failure]
-
-      def initialize_user_from_auth_email
+      def handle_callback
         if auth_hash.blank? || auth_hash.info&.email.blank?
           return redirect_to new_user_session_path, alert: t("devise.failure.missing_oauth_email")
         end
@@ -82,48 +80,25 @@ def add_controllers
           return redirect_to new_user_session_path, alert: t("devise.failure.unverified_oauth_email")
         end
 
-        @user = User.from_omniauth_email(auth_hash)
-        return redirect_to new_user_session_path, alert: t("devise.failure.oauth_auth_failed") if @user.nil?
+        @user = User.from_omniauth(auth_hash, current_user)
 
-        @user.confirm if User.devise_modules.include?(:confirmable) && !@user.confirmed?
-        user_omniauth_providers
-
-        if @user.persisted?
-          sign_in_and_redirect @user, event: :authentication
-        else
-          redirect_to new_user_registration_path, alert: @user.errors.full_messages.to_sentence
-        end
-      end
-
-      def user_omniauth_providers
-        provider = auth_hash["provider"]
-        @user.provider ||= provider
-        @user.uid ||= auth_hash[:uid]
-        if @user.omniauth_providers[provider].nil?
-          @user.omniauth_providers[provider] = {
-            "uid" => auth_hash[:uid],
-            "email" => auth_hash.info&.email
-          }
-        end
-        begin
-          @user.save
-        rescue ActiveRecord::RecordNotUnique
-          @user = User.find_by!(email: auth_hash.info.email)
-          @user.provider ||= provider
-          @user.uid ||= auth_hash[:uid]
-          if @user.omniauth_providers[provider].nil?
-            @user.omniauth_providers[provider] = {
-              "uid" => auth_hash[:uid],
-              "email" => auth_hash.info&.email
-            }
+        if @user&.persisted?
+          if current_user
+            flash[:notice] = t("devise.omniauth_callbacks.linked", kind: auth_hash.provider.humanize)
+            redirect_to edit_user_registration_path
+          else
+            set_flash_message(:notice, :success, kind: auth_hash.provider.humanize) if is_navigational_format?
+            sign_in_and_redirect @user, event: :authentication
           end
-          @user.save
+        else
+          flash[:alert] = t("devise.failure.oauth_auth_failed")
+          redirect_to new_user_session_path
         end
       end
 
-      def google_oauth2; end
-      def facebook; end
-      def microsoft_graph; end
+      alias_method :google_oauth2, :handle_callback
+      alias_method :facebook, :handle_callback
+      alias_method :microsoft_graph, :handle_callback
 
       def failure
         super

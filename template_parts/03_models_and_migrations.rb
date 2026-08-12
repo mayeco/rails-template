@@ -15,24 +15,70 @@ def add_models_and_migrations
       devise :database_authenticatable, :registerable,
              :recoverable, :rememberable, :validatable,
              :confirmable, :lockable, :trackable, :omniauthable,
-             omniauth_providers: [:google_oauth2, :facebook, :microsoft_graph]
+             omniauth_providers: [ :google_oauth2, :facebook, :microsoft_graph ]
 
-      # def self.from_omniauth(auth)
-      #   raise if auth.provider.blank? || auth.uid.blank?
-      #
-      #   where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-      #     user.email = auth.info.email
-      #     user.password = Devise.friendly_token[0, 20]
-      #   end
-      # end
+      has_many :identities, dependent: :destroy
 
-      def self.from_omniauth_email(auth)
-        return nil if auth.blank? || auth.info&.email.blank?
-
-        where(email: auth.info.email).first_or_initialize do |user|
-          user.password = Devise.friendly_token[0, 20]
-        end
+      # Devise requires password by default; optional for social-only accounts
+      def password_required?
+        super && identities.empty?
       end
+
+      # Core logic for Multi-Provider OAuth
+      def self.from_omniauth(auth, current_user = nil)
+        identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+
+        if identity
+          # Identity belongs to another account: conflict (do not merge automatically)
+          return nil if current_user && identity.user != current_user
+
+          return identity.user
+        end
+
+        # Logged-in user linking a new social account
+        if current_user
+          current_user.identities.create!(provider: auth.provider, uid: auth.uid, email: auth.info.email)
+          return current_user
+        end
+
+        # Find by email returned by provider
+        user = User.find_by(email: auth.info.email) if auth.info.email.present?
+
+        # Create new user if it does not exist
+        if user.nil?
+          user = User.new(
+            email: auth.info.email,
+            name: auth.info.name,
+            avatar_url: auth.info.image,
+            password: Devise.friendly_token[0, 20]
+          )
+          begin
+            user.save
+          rescue ActiveRecord::RecordNotUnique
+            user = User.find_by!(email: auth.info.email)
+          end
+        end
+
+        if user.persisted?
+          user.confirm if User.devise_modules.include?(:confirmable) && !user.confirmed?
+          begin
+            user.identities.create!(provider: auth.provider, uid: auth.uid, email: auth.info.email)
+          rescue ActiveRecord::RecordNotUnique
+            return Identity.find_by(provider: auth.provider, uid: auth.uid)&.user || user
+          end
+        end
+
+        user
+      end
+    end
+  RUBY
+
+  create_file "app/models/identity.rb", <<~'RUBY', force: true
+    class Identity < ApplicationRecord
+      belongs_to :user
+
+      validates :provider, presence: true
+      validates :uid, presence: true, uniqueness: { scope: :provider }
     end
   RUBY
 
@@ -71,15 +117,9 @@ def add_models_and_migrations
           t.string   :unlock_token
           t.datetime :locked_at
 
-          ## OmniAuth
-          t.string   :provider
-          t.string   :uid
-
-          if t.respond_to?(:jsonb)
-            t.jsonb :omniauth_providers, null: false, default: {}
-          else
-            t.json :omniauth_providers, null: false, default: {}
-          end
+          ## Profile
+          t.string :name
+          t.string :avatar_url
 
           t.timestamps null: false
         end
@@ -88,7 +128,25 @@ def add_models_and_migrations
         add_index :users, :reset_password_token, unique: true
         add_index :users, :confirmation_token,   unique: true
         add_index :users, :unlock_token,         unique: true
-        add_index :users, [ :provider, :uid ],     unique: true
+      end
+    end
+  RUBY
+
+  create_file "db/migrate/20250416121354_create_identities.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    class CreateIdentities < ActiveRecord::Migration[8.0]
+      def change
+        create_table :identities do |t|
+          t.references :user, null: false, foreign_key: true
+          t.string :provider, null: false
+          t.string :uid, null: false
+          t.string :email
+
+          t.timestamps null: false
+        end
+
+        add_index :identities, [ :provider, :uid ], unique: true
       end
     end
   RUBY

@@ -10,7 +10,7 @@ def add_configurations
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: "development"
   environment 'config.action_mailer.default_url_options = { host: "www.change-me.com", protocol: "https" }', env: "production"
-  environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
+  environment "config.action_cable.allowed_request_origins = [ %r{http://*}, %r{https://*} ]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
 

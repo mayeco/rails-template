@@ -11,6 +11,8 @@ def add_locales
           welcome_back: "Bienvenido de nuevo, %{email}!"
           find_me_in: "Encuentra esta vista en %{path}"
       devise:
+        omniauth_callbacks:
+          linked: "Cuenta de %{kind} enlazada exitosamente."
         failure:
           recaptcha_failed: "Verificación reCAPTCHA fallida, inténtalo de nuevo."
           unverified_oauth_email: "El correo electrónico de tu cuenta no ha sido verificado por el proveedor."
@@ -106,6 +108,8 @@ def add_locales
           welcome_back: "Welcome back, %{email}!"
           find_me_in: "Find this view in %{path}"
       devise:
+        omniauth_callbacks:
+          linked: "%{kind} account linked successfully."
         failure:
           recaptcha_failed: "reCAPTCHA verification failed, please try again."
           unverified_oauth_email: "Your account email has not been verified by the provider."

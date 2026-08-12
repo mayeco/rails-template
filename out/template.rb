@@ -68,7 +68,7 @@ def add_configurations
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: "development"
   environment 'config.action_mailer.default_url_options = { host: "www.change-me.com", protocol: "https" }', env: "production"
-  environment "config.action_cable.allowed_request_origins = [%r{http://*}, %r{https://*}]", env: "development"
+  environment "config.action_cable.allowed_request_origins = [ %r{http://*}, %r{https://*} ]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
 
@@ -337,24 +337,70 @@ def add_models_and_migrations
       devise :database_authenticatable, :registerable,
              :recoverable, :rememberable, :validatable,
              :confirmable, :lockable, :trackable, :omniauthable,
-             omniauth_providers: [:google_oauth2, :facebook, :microsoft_graph]
+             omniauth_providers: [ :google_oauth2, :facebook, :microsoft_graph ]
 
-      # def self.from_omniauth(auth)
-      #   raise if auth.provider.blank? || auth.uid.blank?
-      #
-      #   where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-      #     user.email = auth.info.email
-      #     user.password = Devise.friendly_token[0, 20]
-      #   end
-      # end
+      has_many :identities, dependent: :destroy
 
-      def self.from_omniauth_email(auth)
-        return nil if auth.blank? || auth.info&.email.blank?
-
-        where(email: auth.info.email).first_or_initialize do |user|
-          user.password = Devise.friendly_token[0, 20]
-        end
+      # Devise requires password by default; optional for social-only accounts
+      def password_required?
+        super && identities.empty?
       end
+
+      # Core logic for Multi-Provider OAuth
+      def self.from_omniauth(auth, current_user = nil)
+        identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+
+        if identity
+          # Identity belongs to another account: conflict (do not merge automatically)
+          return nil if current_user && identity.user != current_user
+
+          return identity.user
+        end
+
+        # Logged-in user linking a new social account
+        if current_user
+          current_user.identities.create!(provider: auth.provider, uid: auth.uid, email: auth.info.email)
+          return current_user
+        end
+
+        # Find by email returned by provider
+        user = User.find_by(email: auth.info.email) if auth.info.email.present?
+
+        # Create new user if it does not exist
+        if user.nil?
+          user = User.new(
+            email: auth.info.email,
+            name: auth.info.name,
+            avatar_url: auth.info.image,
+            password: Devise.friendly_token[0, 20]
+          )
+          begin
+            user.save
+          rescue ActiveRecord::RecordNotUnique
+            user = User.find_by!(email: auth.info.email)
+          end
+        end
+
+        if user.persisted?
+          user.confirm if User.devise_modules.include?(:confirmable) && !user.confirmed?
+          begin
+            user.identities.create!(provider: auth.provider, uid: auth.uid, email: auth.info.email)
+          rescue ActiveRecord::RecordNotUnique
+            return Identity.find_by(provider: auth.provider, uid: auth.uid)&.user || user
+          end
+        end
+
+        user
+      end
+    end
+  RUBY
+
+  create_file "app/models/identity.rb", <<~'RUBY', force: true
+    class Identity < ApplicationRecord
+      belongs_to :user
+
+      validates :provider, presence: true
+      validates :uid, presence: true, uniqueness: { scope: :provider }
     end
   RUBY
 
@@ -393,15 +439,9 @@ def add_models_and_migrations
           t.string   :unlock_token
           t.datetime :locked_at
 
-          ## OmniAuth
-          t.string   :provider
-          t.string   :uid
-
-          if t.respond_to?(:jsonb)
-            t.jsonb :omniauth_providers, null: false, default: {}
-          else
-            t.json :omniauth_providers, null: false, default: {}
-          end
+          ## Profile
+          t.string :name
+          t.string :avatar_url
 
           t.timestamps null: false
         end
@@ -410,7 +450,25 @@ def add_models_and_migrations
         add_index :users, :reset_password_token, unique: true
         add_index :users, :confirmation_token,   unique: true
         add_index :users, :unlock_token,         unique: true
-        add_index :users, [ :provider, :uid ],     unique: true
+      end
+    end
+  RUBY
+
+  create_file "db/migrate/20250416121354_create_identities.rb", <<~'RUBY', force: true
+    # frozen_string_literal: true
+
+    class CreateIdentities < ActiveRecord::Migration[8.0]
+      def change
+        create_table :identities do |t|
+          t.references :user, null: false, foreign_key: true
+          t.string :provider, null: false
+          t.string :uid, null: false
+          t.string :email
+
+          t.timestamps null: false
+        end
+
+        add_index :identities, [ :provider, :uid ], unique: true
       end
     end
   RUBY
@@ -447,7 +505,7 @@ def add_controllers
     # frozen_string_literal: true
 
     class Users::RegistrationsController < Devise::RegistrationsController
-      prepend_before_action :check_captcha, only: [:create]
+      prepend_before_action :check_captcha, only: [ :create ]
 
       protected
 
@@ -471,7 +529,7 @@ def add_controllers
     # frozen_string_literal: true
 
     class Users::SessionsController < Devise::SessionsController
-      prepend_before_action :check_captcha, only: [:create]
+      prepend_before_action :check_captcha, only: [ :create ]
 
       def check_captcha
         return if verify_recaptcha(action: "login")
@@ -489,9 +547,7 @@ def add_controllers
     class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       layout false
 
-      before_action :initialize_user_from_auth_email, except: [:failure]
-
-      def initialize_user_from_auth_email
+      def handle_callback
         if auth_hash.blank? || auth_hash.info&.email.blank?
           return redirect_to new_user_session_path, alert: t("devise.failure.missing_oauth_email")
         end
@@ -501,48 +557,25 @@ def add_controllers
           return redirect_to new_user_session_path, alert: t("devise.failure.unverified_oauth_email")
         end
 
-        @user = User.from_omniauth_email(auth_hash)
-        return redirect_to new_user_session_path, alert: t("devise.failure.oauth_auth_failed") if @user.nil?
+        @user = User.from_omniauth(auth_hash, current_user)
 
-        @user.confirm if User.devise_modules.include?(:confirmable) && !@user.confirmed?
-        user_omniauth_providers
-
-        if @user.persisted?
-          sign_in_and_redirect @user, event: :authentication
-        else
-          redirect_to new_user_registration_path, alert: @user.errors.full_messages.to_sentence
-        end
-      end
-
-      def user_omniauth_providers
-        provider = auth_hash["provider"]
-        @user.provider ||= provider
-        @user.uid ||= auth_hash[:uid]
-        if @user.omniauth_providers[provider].nil?
-          @user.omniauth_providers[provider] = {
-            "uid" => auth_hash[:uid],
-            "email" => auth_hash.info&.email
-          }
-        end
-        begin
-          @user.save
-        rescue ActiveRecord::RecordNotUnique
-          @user = User.find_by!(email: auth_hash.info.email)
-          @user.provider ||= provider
-          @user.uid ||= auth_hash[:uid]
-          if @user.omniauth_providers[provider].nil?
-            @user.omniauth_providers[provider] = {
-              "uid" => auth_hash[:uid],
-              "email" => auth_hash.info&.email
-            }
+        if @user&.persisted?
+          if current_user
+            flash[:notice] = t("devise.omniauth_callbacks.linked", kind: auth_hash.provider.humanize)
+            redirect_to edit_user_registration_path
+          else
+            set_flash_message(:notice, :success, kind: auth_hash.provider.humanize) if is_navigational_format?
+            sign_in_and_redirect @user, event: :authentication
           end
-          @user.save
+        else
+          flash[:alert] = t("devise.failure.oauth_auth_failed")
+          redirect_to new_user_session_path
         end
       end
 
-      def google_oauth2; end
-      def facebook; end
-      def microsoft_graph; end
+      alias_method :google_oauth2, :handle_callback
+      alias_method :facebook, :handle_callback
+      alias_method :microsoft_graph, :handle_callback
 
       def failure
         super
@@ -671,6 +704,8 @@ def add_locales
           welcome_back: "Bienvenido de nuevo, %{email}!"
           find_me_in: "Encuentra esta vista en %{path}"
       devise:
+        omniauth_callbacks:
+          linked: "Cuenta de %{kind} enlazada exitosamente."
         failure:
           recaptcha_failed: "Verificación reCAPTCHA fallida, inténtalo de nuevo."
           unverified_oauth_email: "El correo electrónico de tu cuenta no ha sido verificado por el proveedor."
@@ -766,6 +801,8 @@ def add_locales
           welcome_back: "Welcome back, %{email}!"
           find_me_in: "Find this view in %{path}"
       devise:
+        omniauth_callbacks:
+          linked: "%{kind} account linked successfully."
         failure:
           recaptcha_failed: "reCAPTCHA verification failed, please try again."
           unverified_oauth_email: "Your account email has not been verified by the provider."
@@ -1712,17 +1749,18 @@ def add_readme
 
     ### OAuth Login Flow (`Users::OmniauthCallbacksController`)
 
-    Users can sign in via Google, Facebook, or Microsoft. Account mapping uses `User.from_omniauth_email(auth)`:
+    Users can sign in via Google, Facebook, or Microsoft. Account mapping uses `User.from_omniauth(auth, current_user)`:
 
     ```ruby
-    def self.from_omniauth_email(auth)
-      where(email: auth.info.email).first_or_initialize do |user|
-        user.password = Devise.friendly_token[0, 20]
-      end
+    def self.from_omniauth(auth, current_user = nil)
+      identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+      # 1. Known identity -> return its user
+      # 2. Logged-in user -> link the new provider to their account
+      # 3. Otherwise -> find or create the user by email and attach the identity
     end
     ```
 
-    OAuth credentials and metadata are stored per-provider in the `users.omniauth_providers` JSON column, alongside the `provider` and `uid` database columns.
+    OAuth credentials are stored per-provider in the `identities` table (`provider`, `uid`, `email`), linked to `users` via `user_id`. This allows one user to link multiple providers. Password is optional for 100% social accounts (`User#password_required?` returns false when identities exist).
 
     ### reCAPTCHA v3 Protection
 
