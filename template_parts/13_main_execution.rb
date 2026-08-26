@@ -40,6 +40,7 @@ after_bundle do
       heroku_app_name: "dummy_heroku_app_name"
       heroku_api_token: "dummy_heroku_api_token"
       mailer_sender: "no-reply@example.com"
+      mailer_host: "www.change-me.com"
       aws_access_key_id: "dummy_aws_access_key_id"
       aws_secret_access_key: "dummy_aws_secret_access_key"
       aws_region: "us-east-1"

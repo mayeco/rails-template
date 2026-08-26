@@ -4,12 +4,17 @@ def add_configurations
   environment 'config.i18n.default_locale = (Figaro.env.app_main_locale || "es").to_sym'
   environment 'config.time_zone = Figaro.env.app_main_timezone || "America/Santiago"'
   environment "config.active_job.queue_adapter = :solid_queue", env: "development"
-  environment "config.active_job.queue_adapter = :solid_queue", env: "production"
 
   environment "config.after_initialize do\n    Bullet.enable = true\n    Bullet.bullet_logger = true\n    Bullet.rails_logger = true\n    Bullet.console = true\n  end", env: "development"
   environment "config.action_mailer.delivery_method = :letter_opener_web", env: "development"
   environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: "development"
-  environment 'config.action_mailer.default_url_options = { host: "www.change-me.com", protocol: "https" }', env: "production"
+  gsub_file "config/environments/production.rb",
+            'config.action_mailer.default_url_options = { host: "example.com" }',
+            'config.action_mailer.default_url_options = { host: Figaro.env.mailer_host || "www.change-me.com", protocol: "https" }'
+
+  unless File.read("config/environments/production.rb").include?("Figaro.env.mailer_host")
+    raise "rails-core error: failed to configure Action Mailer default_url_options in config/environments/production.rb"
+  end
   environment "config.action_cable.allowed_request_origins = [ %r{http://*}, %r{https://*} ]", env: "development"
   environment "config.action_cable.disable_request_forgery_protection = true", env: "development"
   environment "config.mission_control.jobs.http_basic_auth_enabled = false", env: "development"
@@ -35,6 +40,7 @@ def add_configurations
     heroku_app_name: "dummy_heroku_app_name"
     heroku_api_token: "dummy_heroku_api_token"
     mailer_sender: "no-reply@example.com"
+    mailer_host: "www.change-me.com"
     aws_access_key_id: "dummy_aws_access_key_id"
     aws_secret_access_key: "dummy_aws_secret_access_key"
     aws_region: "us-east-1"
