@@ -138,19 +138,19 @@ def add_automation_scripts
       def run
         gems_to_check = select_gems
         if gems_to_check.empty?
-          puts "No se encontraron gemas para verificar."
+          puts "No gems found to verify."
           return
         end
 
         scope_desc = if @target_gems
-                       "especificadas (#{@target_gems.join(', ')})"
+                       "specified (#{@target_gems.join(', ')})"
                      elsif @check_all
-                       "todas las gemas de Gemfile.lock (incluyendo transitivas)"
+                       "all gems from Gemfile.lock (including transitive)"
                      else
-                       "gemas declaradas en el proyecto"
+                       "declared project gems"
                      end
 
-        puts "🔍 Verificando #{gems_to_check.size} #{scope_desc} con RubyGems.org..."
+        puts "🔍 Checking #{gems_to_check.size} #{scope_desc} against RubyGems.org..."
         puts "-" * 70
 
         results = check_gems_concurrently(gems_to_check)
@@ -318,27 +318,27 @@ def add_automation_scripts
             puts "#{padded_name}  ✅"
           when :outdated
             outdated_count += 1
-            curr_display = current ? " (actual: #{current})" : ""
-            puts "#{padded_name}  última versión: #{latest}#{curr_display}"
+            curr_display = current ? " (current: #{current})" : ""
+            puts "#{padded_name}  latest version: #{latest}#{curr_display}"
           when :not_installed
             other_count += 1
             if latest
-              puts "#{padded_name}  última versión: #{latest} (no instalada localmente)"
+              puts "#{padded_name}  latest version: #{latest} (not installed locally)"
             else
-              puts "#{padded_name}  ℹ️  no encontrada en RubyGems (no instalada)"
+              puts "#{padded_name}  ℹ️  not found on RubyGems (not installed)"
             end
           when :not_found
             other_count += 1
-            puts "#{padded_name}  ℹ️  no disponible en RubyGems.org (git o privada)"
+            puts "#{padded_name}  ℹ️  not available on RubyGems.org (git or private)"
           when :error
             other_count += 1
-            puts "#{padded_name}  ⚠️  error al consultar RubyGems.org"
+            puts "#{padded_name}  ⚠️  error querying RubyGems.org"
           end
         end
 
         puts "-" * 70
-        summary = "Total: #{results.size} | Al día: #{up_to_date_count} ✅ | Desactualizadas: #{outdated_count}"
-        summary += " | Otras (git/privadas/error): #{other_count}" if other_count > 0
+        summary = "Total: #{results.size} | Up to date: #{up_to_date_count} ✅ | Outdated: #{outdated_count}"
+        summary += " | Other (git/private/error): #{other_count}" if other_count > 0
         puts summary
       end
     end
