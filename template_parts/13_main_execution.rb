@@ -25,6 +25,10 @@ after_bundle do
 
   append_to_file "config/application.yml" do
     <<~YAML
+      appname: "#{app_name}"
+      hostname: "127.0.0.1"
+      username: "postgres"
+      password: "password"
       app_main_locale: "es"
       app_main_timezone: "America/Santiago"
       recaptcha_site_key: "dummy_site_key"
@@ -50,6 +54,8 @@ after_bundle do
       gcs_bucket: "dummy_gcs_bucket"
     YAML
   end
+
+  configure_database
 
   rails_command "tailwindcss:install"
   if File.exist?("app/views/layouts/application.html.erb")
@@ -84,6 +90,7 @@ after_bundle do
   end
 
   rails_command "tailwindcss:build"
+  generate "simple_form:install", "--template-engine=erb"
   generate "devise:install"
   generate "kaminari:config"
   rails_command "action_text:install"

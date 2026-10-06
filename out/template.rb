@@ -32,6 +32,7 @@ def add_gems
   gem 'google-cloud-storage', '>= 1.62', require: false
   gem 'tailwindcss-rails', '>= 4.6'
   gem 'simple_form', '>= 5.4.1'
+  gem 'simple_form-tailwind', '>= 0.2.0'
   gem 'figaro', '>= 1.3'
   gem 'faraday', '>= 2.14.3'
   gem 'prefixed_ids', '>= 1.8.1'
@@ -83,6 +84,10 @@ def add_configurations
   append_to_file ".dockerignore", "\n# Figaro configuration\n/config/application.yml\n" if File.exist?(".dockerignore")
 
   create_file "config/application.yml.example", <<~'YAML', force: true
+    appname: "my_app"
+    hostname: "127.0.0.1"
+    username: "postgres"
+    password: "password"
     app_main_locale: "es"
     app_main_timezone: "America/Santiago"
     recaptcha_site_key: "dummy_site_key"
@@ -170,13 +175,6 @@ def add_configurations
         policy.frame_src   :self, "https://www.google.com", "https://www.recaptcha.net", "https://recaptcha.net"
         policy.connect_src :self, :https, "ws:", "wss:", "http://localhost:*", "ws://localhost:*"
       end
-    end
-  RUBY
-
-  create_file "config/initializers/simple_form.rb", <<~'RUBY', force: true
-    # frozen_string_literal: true
-
-    SimpleForm.setup do |config|
     end
   RUBY
 
@@ -323,6 +321,70 @@ def add_configurations
       end
     end
   RUBY
+
+  configure_database
+end
+
+def configure_database
+  is_postgres = (options[:database] == "postgresql" || options["database"] == "postgresql") ||
+                (File.exist?("Gemfile") && File.read("Gemfile").match?(/gem\s+['"]pg['"]/))
+  is_sqlite = (options[:database] == "sqlite3" || options["database"] == "sqlite3") ||
+              (File.exist?("Gemfile") && File.read("Gemfile").match?(/gem\s+['"]sqlite3['"]/))
+
+  if is_postgres && !is_sqlite
+    puts "\n==> Configuring PostgreSQL database.yml with Figaro integration..."
+    create_file "config/database.yml", <<~'YAML', force: true
+      default: &default
+        adapter: postgresql
+        encoding: unicode
+        pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+        host: <%= (defined?(Figaro) && (Figaro.env.hostname || Figaro.env.database_host)) || "127.0.0.1" %>
+        username: <%= (defined?(Figaro) && (Figaro.env.username || Figaro.env.database_username)) || "postgres" %>
+        password: <%= (defined?(Figaro) && (Figaro.env.password || Figaro.env.database_password)) || "password" %>
+
+      development:
+        primary: &primary_development
+          <<: *default
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_development
+        cache:
+          <<: *primary_development
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_development_cache
+          migrations_paths: db/cache_migrate
+        queue:
+          <<: *primary_development
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_development_queue
+          migrations_paths: db/queue_migrate
+        cable:
+          <<: *primary_development
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_development_cable
+          migrations_paths: db/cable_migrate
+
+      test:
+        <<: *default
+        database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_test
+
+      production:
+        primary: &primary_production
+          <<: *default
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_production
+          username: <%= (defined?(Figaro) && (Figaro.env.username || Figaro.env.database_username)) || "postgres" %>
+          password: <%= (defined?(Figaro) && (Figaro.env.password || Figaro.env.database_password)) || ENV["DATABASE_PASSWORD"] %>
+        cache:
+          <<: *primary_production
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_production_cache
+          migrations_paths: db/cache_migrate
+        queue:
+          <<: *primary_production
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_production_queue
+          migrations_paths: db/queue_migrate
+        cable:
+          <<: *primary_production
+          database: <%= (defined?(Figaro) && (Figaro.env.appname || Figaro.env.app_name)) || Rails.application.class.module_parent_name.underscore %>_production_cable
+          migrations_paths: db/cable_migrate
+    YAML
+  else
+    puts "\n==> Skipping PostgreSQL database.yml configuration (database is not postgresql or is sqlite)."
+  end
 end
 
 # --- Part: 03_models_and_migrations.rb ---
@@ -2283,6 +2345,10 @@ after_bundle do
 
   append_to_file "config/application.yml" do
     <<~YAML
+      appname: "#{app_name}"
+      hostname: "127.0.0.1"
+      username: "postgres"
+      password: "password"
       app_main_locale: "es"
       app_main_timezone: "America/Santiago"
       recaptcha_site_key: "dummy_site_key"
@@ -2308,6 +2374,8 @@ after_bundle do
       gcs_bucket: "dummy_gcs_bucket"
     YAML
   end
+
+  configure_database
 
   rails_command "tailwindcss:install"
   if File.exist?("app/views/layouts/application.html.erb")
@@ -2342,6 +2410,7 @@ after_bundle do
   end
 
   rails_command "tailwindcss:build"
+  generate "simple_form:install", "--template-engine=erb"
   generate "devise:install"
   generate "kaminari:config"
   rails_command "action_text:install"
