@@ -14,7 +14,7 @@ A modular, production-ready Rails application template generator designed to qui
 - **Monitoring & Debugging**: **Debugbar**, **Bullet** N+1 detector (console/log), and **Letter Opener Web** for development email previews at `/letter_opener`.
 - **Automation & Heroku Tooling**:
   - `Procfile`: Ready for Heroku/Thrust web dynos, worker dynos, and release phases.
-  - `script/setup_heroku_env.sh`: Automatically syncs local environment variables from `config/application.yml` to Heroku.
+  - `lib/tasks/setup_heroku_env.rake`: Custom Rake task to automatically sync local environment variables from `config/application.yml` to Heroku.
 
 ---
 
@@ -85,15 +85,27 @@ You can pass any additional flags directly to `generate_test.sh` (e.g., `./gener
 
 ---
 
-## Automation Scripts
-
-The generated Rails app includes helpful automation scripts in `script/`:
+## Automation Tasks
+ 
+The generated Rails app includes helpful automation tasks in `lib/tasks/`:
 
 - **Heroku Config Sync**:
   ```bash
-  ./script/setup_heroku_env.sh my-heroku-app
+  bin/rails "heroku:setup_env[my-heroku-app]"
+  # or
+  bin/rails "setup_heroku_env[my-heroku-app]"
   ```
   Parses `config/application.yml` and pushes configuration key-value pairs directly to your Heroku app.
+
+- **RubyGems Version Checker**:
+  ```bash
+  bin/rails gems:check_versions
+  # or
+  bin/rails gems:check
+  # or check specific gem:
+  bin/rails "gems:check[devise]"
+  ```
+  Checks declared gems in `Gemfile` / `Gemfile.lock` against RubyGems.org for outdated versions.
 
 ---
 

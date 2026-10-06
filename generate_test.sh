@@ -49,7 +49,8 @@ REQUIRED_FILES=(
   "config/routes.rb"
   "config/recurring.yml"
   "Procfile"
-  "script/setup_heroku_env.sh"
+  "lib/tasks/setup_heroku_env.rake"
+  "lib/tasks/check_gem_versions.rake"
   "config/application.yml.example"
   "AGENTS.md"
   ".ruby-gemset"
@@ -73,6 +74,21 @@ bin/rails runner "
   SolidCable::Message.count
   puts '==> All models and database tables verified successfully!'
 "
+
+echo "==> Verifying custom Rake tasks..."
+bin/rails -T heroku | grep -q "heroku:setup_env" || {
+  echo "Error: heroku:setup_env task not found in bin/rails -T"
+  exit 1
+}
+bin/rails -T setup_heroku_env | grep -q "setup_heroku_env" || {
+  echo "Error: setup_heroku_env task not found in bin/rails -T"
+  exit 1
+}
+bin/rails -T gems | grep -q "gems:check_versions" || {
+  echo "Error: gems:check_versions task not found in bin/rails -T"
+  exit 1
+}
+echo "==> Custom Rake tasks verified successfully!"
 
 echo "========================================================="
 echo " Test Rails application successfully created and verified!"

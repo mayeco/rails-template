@@ -96,7 +96,7 @@ The template compilation proceeds strictly in numerical order from `01` to `13`.
 | `07` | `07_views.rb` | Complete UI view suite: `application.html.erb` layout, landing page (`page/index.html.erb`), and styled Devise authentication views using Tailwind CSS and SimpleForm. |
 | `08` | `08_mailers.rb` | Mailer HTML/Text layouts and customized transactional email templates for Devise (password reset, email confirmation, account unlock). |
 | `09` | `09_routes.rb` | Route definitions (`config/routes.rb`) mounting Devise, root to `page#index`, Mission Control Jobs at `/jobs`, and Letter Opener Web at `/letter_opener` in development. |
-| `10` | `10_automation_scripts.rb` | Deployment and ops files: `Procfile` (web, worker, release), and `script/setup_heroku_env.sh` to sync Figaro variables to Heroku. |
+| `10` | `10_automation_scripts.rb` | Deployment and ops files: `Procfile` (web, worker, release), and custom Rake tasks (`setup_heroku_env.rake`, `check_gem_versions.rake`). |
 | `11` | `11_readme.rb` | Injects an exhaustive `README.md` and root `AGENTS.md` into the *generated application* for end-developer documentation. |
 | `12` | `12_directory_readmes.rb` | Places specialized `README.md` files inside `app/models/`, `app/controllers/`, `app/views/`, `app/services/`, `app/jobs/`, `config/`, and `test/` within the generated application. |
 | `13` | `13_main_execution.rb` | Enforces Rails `>= 8.1.0`, invokes `add_*` methods, and runs `after_bundle` hooks (installs Figaro, Tailwind, DaisyUI v5 assets, Devise, Solid Stack migrations, and runs `db:migrate`). |

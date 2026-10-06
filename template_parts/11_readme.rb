@@ -457,12 +457,26 @@ def add_readme
     release: ./bin/rails db:prepare
     ```
 
-    ### Heroku Configuration Synchronization Script
+    ### Heroku Configuration Synchronization Task
 
     To push all configuration keys from `config/application.yml` directly to your Heroku application:
 
     ```bash
-    ./script/setup_heroku_env.sh my-heroku-app-name
+    bin/rails "heroku:setup_env[my-heroku-app-name]"
+    # or
+    bin/rails "setup_heroku_env[my-heroku-app-name]"
+    ```
+
+    ### RubyGems Outdated Version Checker
+
+    Check declared project gems against RubyGems.org for newer versions:
+
+    ```bash
+    bin/rails gems:check_versions
+    # or
+    bin/rails gems:check
+    # or check a specific gem:
+    bin/rails "gems:check[devise]"
     ```
 
     ---
