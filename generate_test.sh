@@ -90,6 +90,19 @@ bin/rails -T gems | grep -q "gems:check_versions" || {
 }
 echo "==> Custom Rake tasks verified successfully!"
 
+if [ -f ".gitignore" ]; then
+  echo "==> Verifying .gitignore contains macOS and JetBrains rules..."
+  grep -q "Global macOS ignore rules" .gitignore || {
+    echo "Error: Global macOS ignore rules not found in .gitignore"
+    exit 1
+  }
+  grep -q "Global JetBrains ignore rules" .gitignore || {
+    echo "Error: Global JetBrains ignore rules not found in .gitignore"
+    exit 1
+  }
+  echo "==> .gitignore rules verified successfully!"
+fi
+
 echo "========================================================="
 echo " Test Rails application successfully created and verified!"
 if [ "$CLEANUP" = true ]; then
