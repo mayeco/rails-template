@@ -96,6 +96,10 @@ if [ -f ".gitignore" ]; then
     echo "Error: Global macOS ignore rules not found in .gitignore"
     exit 1
   }
+  grep -q "JetBrains IDEs (RubyMine, IntelliJ, etc.)" .gitignore || {
+    echo "Error: JetBrains IDEs rules not found in .gitignore"
+    exit 1
+  }
   grep -q "Global JetBrains ignore rules" .gitignore || {
     echo "Error: Global JetBrains ignore rules not found in .gitignore"
     exit 1

@@ -3001,6 +3001,24 @@ def configure_gitignore
       #{macos_content.strip}
 
       # ==============================================================================
+      # JetBrains IDEs (RubyMine, IntelliJ, etc.)
+      # ==============================================================================
+      # Covers user-specific settings, caches, and temporary project data.
+
+      .idea/
+      *.iml
+      *.ipr
+      *.iws
+
+      # If you choose to share project settings via Git, un-comment the lines below
+      # but keep user-specific configurations ignored:
+      # !.idea/codeStyles/
+      # !.idea/runConfigurations/
+      # .idea/workspace.xml
+      # .idea/tasks.xml
+      # .idea/shelf/
+
+      # ==============================================================================
       # Global JetBrains ignore rules
       # Source: #{jetbrains_url}
       # ==============================================================================
